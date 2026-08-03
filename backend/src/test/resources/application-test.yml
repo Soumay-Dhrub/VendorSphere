@@ -1,0 +1,3 @@
+vendorsphere:
+  jwt:
+    secret: test-secret-key-at-least-256-bits-long-for-hmac-sha256-algorithm

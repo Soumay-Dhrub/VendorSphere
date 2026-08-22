@@ -21,7 +21,10 @@
         <java.version>21</java.version>
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.7.0</springdoc.version>
-        <testcontainers.version>1.20.4</testcontainers.version>
+        <!-- 1.21.4+ negotiates Docker Engine API 1.44; earlier 1.20.x pins 1.32, which
+             Docker Engine 29 rejects with HTTP 400 -->
+        <testcontainers.version>1.21.4</testcontainers.version>
+        <jqwik.version>1.9.2</jqwik.version>
     </properties>
 
     <dependencies>
@@ -103,6 +106,12 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Enables @ServiceConnection so a Testcontainers database wires the DataSource -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -115,6 +124,13 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Property-based testing -->
+        <dependency>
+            <groupId>net.jqwik</groupId>
+            <artifactId>jqwik</artifactId>
+            <version>${jqwik.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -122,6 +138,20 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Surefire defaults plus *Properties so jqwik property classes are run -->
+                    <includes>
+                        <include>**/Test*.java</include>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*TestCase.java</include>
+                        <include>**/*Properties.java</include>
+                    </includes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

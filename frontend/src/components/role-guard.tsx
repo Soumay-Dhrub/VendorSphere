@@ -1,8 +1,7 @@
 "use client";
 
 import { ShieldAlert } from "lucide-react";
-import { useMemo, useSyncExternalStore } from "react";
-import { getStoredUser } from "@/lib/api";
+import { useStoredUser } from "@/lib/hooks/auth";
 
 /** The six roles issued by the backend. */
 export const ROLES = [
@@ -60,22 +59,11 @@ const NO_ROLES: readonly string[] = [];
 
 /** Roles of the signed-in user, or `null` until the client-side auth state is readable. */
 function useStoredRoles(): readonly string[] | null {
-  const rawUser = useSyncExternalStore(subscribeToStoredUser, getStoredUserSnapshot, () => null);
-
-  return useMemo(
-    () => (rawUser === null ? null : (getStoredUser()?.roles ?? NO_ROLES)),
-    [rawUser],
-  );
-}
-
-function subscribeToStoredUser(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  return () => window.removeEventListener("storage", onStoreChange);
-}
-
-/** Returns the raw stored value so the snapshot identity stays stable between renders. */
-function getStoredUserSnapshot(): string {
-  return window.localStorage.getItem("user") ?? "";
+  const user = useStoredUser();
+  if (user === undefined) {
+    return null;
+  }
+  return user?.roles ?? NO_ROLES;
 }
 
 export function AccessDenied({ allow }: { allow: readonly Role[] }) {

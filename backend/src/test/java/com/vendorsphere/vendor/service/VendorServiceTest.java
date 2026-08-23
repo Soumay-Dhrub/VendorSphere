@@ -2,7 +2,9 @@ package com.vendorsphere.vendor.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -12,7 +14,9 @@ import static org.mockito.Mockito.when;
 import com.vendorsphere.audit.AuditAction;
 import com.vendorsphere.audit.service.AuditService;
 import com.vendorsphere.auth.security.UserPrincipal;
+import com.vendorsphere.common.dto.PageResponse;
 import com.vendorsphere.common.exception.BusinessException;
+import com.vendorsphere.common.util.PageSupport;
 import com.vendorsphere.common.util.ReferenceNumberGenerator;
 import com.vendorsphere.common.util.ReferencePrefix;
 import com.vendorsphere.organization.entity.Organization;
@@ -21,6 +25,7 @@ import com.vendorsphere.user.entity.User;
 import com.vendorsphere.vendor.VendorStatus;
 import com.vendorsphere.vendor.dto.VendorRequest;
 import com.vendorsphere.vendor.dto.VendorResponse;
+import com.vendorsphere.vendor.dto.VendorSearchCriteria;
 import com.vendorsphere.vendor.entity.Vendor;
 import com.vendorsphere.vendor.entity.VendorCategory;
 import com.vendorsphere.vendor.repository.VendorCategoryRepository;
@@ -31,11 +36,17 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -258,6 +269,81 @@ class VendorServiceTest {
                 .thenReturn(Optional.of(new BigDecimal("72.4")));
 
         assertThat(service.get(existing.getId()).performanceScore()).isEqualByComparingTo("72.40");
+    }
+
+    /**
+     * Requirements 6.7 and 31.5: exactly the four fields of 6.7 sort, and anything else is a 400 whose
+     * message lists them. The listing hands {@code PageSupport} its whitelist, so this is the contract
+     * the controller of task 5.10 inherits.
+     */
+    @Test
+    void onlyTheFourSortableFieldsAreAcceptedAndAnythingElseIsRejectedListingThem() {
+        assertThat(VendorService.SORTABLE.fields())
+                .containsExactly("companyName", "registeredAt", "rating", "status");
+        assertThat(VendorService.SORTABLE.defaultField()).isEqualTo("companyName");
+
+        for (String field : VendorService.SORTABLE.fields()) {
+            assertThat(PageSupport.pageable(null, null, field, "DESC", VendorService.SORTABLE)
+                    .getSort().getOrderFor(field)).isNotNull();
+        }
+
+        assertThatThrownBy(() ->
+                PageSupport.pageable(0, 20, "email", "ASC", VendorService.SORTABLE))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Invalid sort field: email. "
+                        + "Sortable fields: companyName, registeredAt, rating, status")
+                .extracting(thrown -> ((BusinessException) thrown).getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Requirement 31.2: the two derived figures of a row are read once per page. A page of three
+     * vendors must not reach for the single-vendor score query or the single-vendor document count,
+     * because that is the N+1 fan-out this listing exists to avoid.
+     */
+    @Test
+    void searchDerivesEveryRowFromOneBatchQueryPerFigureRatherThanOnePerRow() {
+        Vendor withSnapshot = existingVendor();
+        withSnapshot.setCompanyName("Acme Supplies");
+        withSnapshot.setRating(new BigDecimal("4.25"));
+        Vendor withDocuments = existingVendor();
+        withDocuments.setCompanyName("Beta Traders");
+        withDocuments.setRating(new BigDecimal("3.00"));
+        Vendor plain = existingVendor();
+        plain.setCompanyName("Gamma Metals");
+        plain.setRating(new BigDecimal("0.00"));
+
+        Pageable pageable = PageSupport.pageable(null, null, null, null, VendorService.SORTABLE);
+        when(vendorRepository.findAll(ArgumentMatchers.<Specification<Vendor>>any(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(withSnapshot, withDocuments, plain), pageable, 3));
+        when(vendorRepository.latestPerformanceScoresByVendorId(anyCollection()))
+                .thenReturn(Map.of(withSnapshot.getId(), new BigDecimal("72.4")));
+        when(vendorDocumentRepository.expiringDocumentCountsByVendorId(
+                anyCollection(), eq(organizationId), any(), any()))
+                .thenReturn(Map.of(withDocuments.getId(), 2L));
+
+        PageResponse<VendorResponse> page = service.search(VendorSearchCriteria.none(), pageable);
+
+        assertThat(page.content()).extracting(
+                        VendorResponse::companyName,
+                        VendorResponse::performanceScore,
+                        VendorResponse::expiringDocumentCount)
+                .containsExactly(
+                        tuple("Acme Supplies", new BigDecimal("72.40"), 0L),
+                        tuple("Beta Traders", new BigDecimal("60.00"), 2L),
+                        tuple("Gamma Metals", new BigDecimal("0.00"), 0L));
+        assertThat(page.totalElements()).isEqualTo(3);
+
+        verify(vendorRepository).latestPerformanceScoresByVendorId(
+                List.of(withSnapshot.getId(), withDocuments.getId(), plain.getId()));
+        verify(vendorDocumentRepository).expiringDocumentCountsByVendorId(
+                List.of(withSnapshot.getId(), withDocuments.getId(), plain.getId()),
+                organizationId,
+                LocalDate.of(2026, 3, 14),
+                LocalDate.of(2026, 4, 13));
+        verify(vendorRepository, never()).findLatestPerformanceScore(any());
+        verify(vendorDocumentRepository, never())
+                .countByVendorIdAndVendorOrganizationIdAndExpiryDateBetween(any(), any(), any(), any());
     }
 
     // ----- fixtures -----

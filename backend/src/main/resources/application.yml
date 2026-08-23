@@ -21,6 +21,14 @@ spring:
     serialization:
       write-bigdecimal-as-plain: true
 
+  servlet:
+    multipart:
+      # Requirement 33.4: the container gate matches the AttachmentService gate exactly, so a
+      # 10485760-byte file is accepted and anything larger fails as 413 with the same message.
+      # The request cap leaves room for multipart framing so the file-size gate stays the binding one.
+      max-file-size: 10485760
+      max-request-size: 11MB
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -45,6 +53,10 @@ vendorsphere:
     secret: ${JWT_SECRET:change-me-in-production-use-at-least-256-bits-for-hmac-sha256}
     access-token-expiration-ms: 900000
     refresh-token-expiration-ms: 604800000
+  attachments:
+    # Requirement 33.7: uploaded files live on the local filesystem under this directory. The
+    # container deployment mounts a volume here (see task 22.6) so files survive restarts.
+    base-directory: ${ATTACHMENT_BASE_DIR:./data/attachments}
 
 springdoc:
   api-docs:

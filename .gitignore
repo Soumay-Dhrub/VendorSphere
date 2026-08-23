@@ -17,6 +17,9 @@ Thumbs.db
 
 # Backend
 backend/target/
+# Local attachment store (vendorsphere.attachments.base-directory)
+backend/data/
+data/attachments/
 backend/.mvn/wrapper/maven-wrapper.jar
 backend/.jqwik-database
 

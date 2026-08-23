@@ -6,49 +6,33 @@ import com.vendorsphere.audit.AuditAction;
 import com.vendorsphere.audit.dto.AuditSearchCriteria;
 import com.vendorsphere.audit.entity.AuditLog;
 import com.vendorsphere.organization.entity.Organization;
-import com.vendorsphere.organization.repository.OrganizationRepository;
+import com.vendorsphere.testsupport.AbstractIntegrationTest;
 import com.vendorsphere.user.entity.User;
-import com.vendorsphere.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Exercises the audit trail against PostgreSQL, because two things here are database behaviour that
  * a mock cannot show: the {@code JSONB} binding of the previous and new state, and the filtered,
  * tenant-scoped read (Requirements 29.1, 29.3 through 29.6).
+ *
+ * <p>Every test is transactional, so it rolls back on the shared database and the tenant-scoped
+ * assertions stay exact: each organization is freshly generated, so the audit rows counted below can
+ * only be the ones the test inserted.
  */
-@SpringBootTest
-@ActiveProfiles("test")
-@Testcontainers
-class AuditLogRepositoryTest {
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+class AuditLogRepositoryTest extends AbstractIntegrationTest {
 
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "createdAt");
 
     @Autowired
     private AuditLogRepository auditLogRepository;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -201,20 +185,11 @@ class AuditLogRepositoryTest {
     // ----- fixtures -----
 
     private Organization organization() {
-        Organization organization = new Organization();
-        organization.setName("Audit Test Org");
-        organization.setSlug("audit-" + UUID.randomUUID());
-        return organizationRepository.saveAndFlush(organization);
+        return newOrganization("audit");
     }
 
     private User user(Organization organization) {
-        User user = new User();
-        user.setOrganization(organization);
-        user.setEmail("audit-" + UUID.randomUUID() + "@example.test");
-        user.setPasswordHash("irrelevant");
-        user.setFirstName("Audit");
-        user.setLastName("Actor");
-        return userRepository.saveAndFlush(user);
+        return userRepository.findById(newActor(organization).id()).orElseThrow();
     }
 
     private AuditLog entry(

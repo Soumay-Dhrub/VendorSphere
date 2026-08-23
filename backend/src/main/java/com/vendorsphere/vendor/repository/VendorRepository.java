@@ -26,6 +26,26 @@ public interface VendorRepository extends JpaRepository<Vendor, UUID>, JpaSpecif
 
     Optional<Vendor> findByIdAndOrganizationId(UUID id, UUID organizationId);
 
+    /**
+     * Identifiers of the vendors {@code userId} is linked to through {@code vendors.user_id}, within
+     * one organization. Backs the vendor-scoped access guard of Requirements 2.7 and 30.8.
+     *
+     * <p>Returns identifiers rather than entities because the guard compares one identifier and never
+     * reads a vendor field, so a projection avoids loading a row the caller does not use.
+     *
+     * <p>Returns a list rather than an {@code Optional} even though a Vendor_User is linked to exactly
+     * one Vendor: {@code vendors.user_id} carries an index but no unique constraint, so two rows can
+     * name the same user. An {@code Optional} finder would raise a 500 on that data, whereas a list
+     * lets the guard treat an ambiguous link as a denial. Ordering makes the result deterministic.
+     */
+    @Query("""
+            SELECT v.id FROM Vendor v
+            WHERE v.user.id = :userId AND v.organization.id = :organizationId
+            ORDER BY v.id
+            """)
+    List<UUID> findIdsByUserIdAndOrganizationId(
+            @Param("userId") UUID userId, @Param("organizationId") UUID organizationId);
+
     boolean existsByOrganizationIdAndEmailIgnoreCase(UUID organizationId, String email);
 
     /** Backs the delete guard of Requirement 4.6, which reports how many vendors use a category. */

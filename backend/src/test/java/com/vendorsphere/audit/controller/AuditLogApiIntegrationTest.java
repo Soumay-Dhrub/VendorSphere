@@ -125,28 +125,21 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
      * which can reach audit data at all, so anything other than a refusal here would mean a write
      * path exists.
      *
-     * <p>The status is asserted as "not successful" rather than as 405 on purpose. No handler is
-     * mapped to {@code /audit-logs/{id}} at all, so the request never reaches method matching: it
-     * falls through to static resource handling, which raises {@code NoResourceFoundException}, which
-     * {@code GlobalExceptionHandler}'s catch-all claims and renders as 500 rather than the 404 it
-     * carries. That is a gap in the error mapping - unrelated to the audit trail and unrelated to
-     * this task's scope - and pinning 500 here would enshrine it. What matters for Requirement 29.9
-     * is asserted instead: the request does not succeed, and the entry is untouched afterwards. A
-     * refusal that had already changed the row would be worse than an acceptance.
+     * <p>The refusal is a 404 rather than the collection's 405: no handler is mapped to
+     * {@code /audit-logs/{id}} for any verb, so the request never reaches method matching. Either way
+     * the entry is untouched afterwards, which is what Requirement 29.9 is about - a refusal that had
+     * already changed the row would be worse than an acceptance.
      */
     @ParameterizedTest
     @ValueSource(strings = {"PUT", "PATCH", "DELETE"})
     void writeVerbsAgainstASingleAuditEntryAreRefusedAndChangeNothing(String method)
             throws Exception {
-        int status = mockMvc.perform(
+        mockMvc.perform(
                         writeRequest(method, ENTRY, entryOnVendorByAdminOfA.getId()).with(as(adminOfA)))
-                .andReturn()
-                .getResponse()
-                .getStatus();
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-        assertThat(status)
-                .describedAs("%s against a single audit entry must not succeed", method)
-                .matches(code -> code < 200 || code >= 300, "outside the 2xx range");
         assertTheTrailOfOrganizationAIsIntact();
     }
 
@@ -177,18 +170,15 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
-     * Requirement 30.2: no token, no trail. The status is asserted as a client error rather than as
-     * 401 because {@code SecurityConfig} configures no {@code AuthenticationEntryPoint} yet, so the
-     * filter chain answers an anonymous request with Spring Security's default 403 instead of the
-     * 401 the requirement pins. Asserting 403 here would lock in behaviour the requirement
-     * contradicts, and asserting 401 would leave a red test over work that belongs to the
-     * authorization task, so this case guards what is true either way: an unauthenticated caller is
-     * refused and receives no audit data.
+     * Requirement 30.2: no token, no trail. The filter chain's {@code AuthenticationEntryPoint}
+     * answers 401 in the same envelope as everything else, which distinguishes an anonymous caller
+     * from the authenticated-but-unauthorized 403 asserted above.
      */
     @Test
     void anUnauthenticatedRequestGetsNoAuditData() throws Exception {
         mockMvc.perform(get(COLLECTION))
-                .andExpect(status().is4xxClientError())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 

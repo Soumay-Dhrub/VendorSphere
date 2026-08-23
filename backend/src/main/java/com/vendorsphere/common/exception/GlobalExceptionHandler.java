@@ -14,6 +14,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,6 +84,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
                 .headers(headers)
                 .body(ApiResponse.error("Method " + ex.getMethod() + " is not supported"));
+    }
+
+    /**
+     * An unmapped path answers 404, not 500.
+     *
+     * <p>When no handler matches, Spring MVC falls through to static resource handling, which raises
+     * {@link NoResourceFoundException} — an exception that already carries 404. The catch-all
+     * {@link #handleGeneric} below would otherwise claim it and report 500, so a plain typo in a URL
+     * would look like a server fault. {@link NoHandlerFoundException} is the equivalent when static
+     * resource handling is not in the chain, and is mapped alongside it so the answer does not depend
+     * on that configuration.
+     */
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleNoHandler(Exception ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Resource not found"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

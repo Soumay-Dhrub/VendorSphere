@@ -2,21 +2,29 @@ package com.vendorsphere.vendor.service;
 
 import com.vendorsphere.audit.AuditAction;
 import com.vendorsphere.audit.service.AuditService;
+import com.vendorsphere.common.dto.PageResponse;
 import com.vendorsphere.common.exception.BusinessException;
 import com.vendorsphere.common.security.SecurityUtils;
 import com.vendorsphere.common.util.Money;
+import com.vendorsphere.common.util.PageSupport;
 import com.vendorsphere.common.util.ReferenceNumberGenerator;
 import com.vendorsphere.common.util.ReferencePrefix;
+import com.vendorsphere.common.util.SortWhitelist;
 import com.vendorsphere.organization.repository.OrganizationRepository;
+import com.vendorsphere.vendor.DocumentExpiryEvaluator;
 import com.vendorsphere.vendor.VendorStatus;
 import com.vendorsphere.vendor.dto.VendorProfileSnapshot;
 import com.vendorsphere.vendor.dto.VendorRequest;
 import com.vendorsphere.vendor.dto.VendorResponse;
+import com.vendorsphere.vendor.dto.VendorSearchCriteria;
 import com.vendorsphere.vendor.entity.Vendor;
 import com.vendorsphere.vendor.entity.VendorCategory;
 import com.vendorsphere.vendor.repository.VendorCategoryRepository;
 import com.vendorsphere.vendor.repository.VendorDocumentRepository;
 import com.vendorsphere.vendor.repository.VendorRepository;
+import com.vendorsphere.vendor.repository.VendorSpecifications;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -45,8 +55,25 @@ public class VendorService {
     /** Pinned by Requirement 2.6. */
     static final String NOT_FOUND_MESSAGE = "Vendor not found";
 
-    /** Requirement 2.5 counts documents expiring within 30 days of the request date. */
-    static final int EXPIRY_WINDOW_DAYS = 30;
+    /**
+     * Requirement 2.5 counts documents expiring within 30 days of the request date, which is the
+     * same window {@link DocumentExpiryEvaluator} classifies as EXPIRING_SOON. It is taken from
+     * there rather than restated, so the counted set and the listed state cannot drift apart.
+     */
+    static final int EXPIRY_WINDOW_DAYS = DocumentExpiryEvaluator.EXPIRING_SOON_WINDOW_DAYS;
+
+    /**
+     * The four sortable fields of the vendor listing (Requirement 6.7), as entity attribute names.
+     *
+     * <p>Company name is the default: an unsorted vendor list is read alphabetically far more often
+     * than by registration order, and it is the first field Requirement 6.7 names. Anything outside
+     * this set is rejected by {@code PageSupport} with 400 listing these four (Requirement 31.5).
+     *
+     * <p>Published so the controller of task 5.10 shares one definition with the service rather than
+     * restating it.
+     */
+    public static final SortWhitelist SORTABLE =
+            SortWhitelist.of("companyName", "registeredAt", "rating", "status");
 
     /**
      * Converts a stored 0.00–5.00 vendor rating back to a 0.00–100.00 performance score. It is the
@@ -149,6 +176,43 @@ public class VendorService {
         return toResponse(findInOrganization(vendorId, organizationId), organizationId);
     }
 
+    /**
+     * Returns a page of the caller's organization's vendors, narrowed by whichever of the four
+     * optional filters were supplied (Requirements 6.1 through 6.6).
+     *
+     * <p>Paging defaults, the size clamp and the sort allowlist all belong to
+     * {@link com.vendorsphere.common.util.PageSupport}, which the caller uses with {@link #SORTABLE}
+     * to build the {@code pageable}; nothing about them is reimplemented here.
+     *
+     * <h4>Why the derived figures are batched</h4>
+     *
+     * <p>Each row carries a performance score and an expiring-document count, exactly as a detail read
+     * does. Deriving them the way {@link #get(UUID)} does would issue two queries per vendor, so a
+     * page of 20 would cost 40 extra round trips and a page of 100 would cost 200 — cost growing with
+     * page size, which Requirement 31.2 does not tolerate for an endpoint that accepts {@code size} up
+     * to 100. Instead both figures are read once for the whole page, keyed on the page's vendor
+     * identifiers, and the category is left-join fetched by the specification. A page therefore costs
+     * four queries (content, count, scores, document counts) whatever its size.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<VendorResponse> search(VendorSearchCriteria criteria, Pageable pageable) {
+        UUID organizationId = SecurityUtils.getCurrentOrganizationId();
+        Page<Vendor> page = vendorRepository.findAll(
+                VendorSpecifications.search(organizationId, criteria), pageable);
+
+        List<UUID> vendorIds = page.getContent().stream().map(Vendor::getId).toList();
+        Map<UUID, BigDecimal> snapshotScores =
+                vendorRepository.latestPerformanceScoresByVendorId(vendorIds);
+        LocalDate today = LocalDate.now(clock);
+        Map<UUID, Long> expiringCounts = vendorDocumentRepository.expiringDocumentCountsByVendorId(
+                vendorIds, organizationId, today, today.plusDays(EXPIRY_WINDOW_DAYS));
+
+        return PageSupport.map(page, vendor -> VendorResponse.from(
+                vendor,
+                performanceScore(vendor, snapshotScores.get(vendor.getId())),
+                expiringCounts.getOrDefault(vendor.getId(), 0L)));
+    }
+
     private Vendor findInOrganization(UUID vendorId, UUID organizationId) {
         return vendorRepository.findByIdAndOrganizationId(vendorId, organizationId)
                 .orElseThrow(() -> new BusinessException(NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND));
@@ -201,10 +265,21 @@ public class VendorService {
      * placeholder, and the figure starts tracking real metrics the moment snapshots appear.
      */
     private BigDecimal performanceScoreOf(Vendor vendor) {
-        return vendorRepository.findLatestPerformanceScore(vendor.getId())
-                .map(Money::clampScore)
-                .orElseGet(() -> Money.clampScore(
-                        Money.multiply(vendor.getRating(), RATING_TO_SCORE_FACTOR)));
+        return performanceScore(vendor, vendorRepository.findLatestPerformanceScore(vendor.getId())
+                .orElse(null));
+    }
+
+    /**
+     * The score rule of {@link #performanceScoreOf(Vendor)} applied to an already-read snapshot score,
+     * so a detail read and a list row derive the figure identically and only the way the snapshot is
+     * fetched differs.
+     *
+     * @param snapshotScore the latest snapshot score, or {@code null} when the vendor has no snapshot
+     */
+    private BigDecimal performanceScore(Vendor vendor, BigDecimal snapshotScore) {
+        return snapshotScore != null
+                ? Money.clampScore(snapshotScore)
+                : Money.clampScore(Money.multiply(vendor.getRating(), RATING_TO_SCORE_FACTOR));
     }
 
     private long expiringDocumentCountOf(Vendor vendor, UUID organizationId) {

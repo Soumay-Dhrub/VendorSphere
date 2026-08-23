@@ -45,16 +45,19 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final ApiResponseAuthenticationEntryPoint authenticationEntryPoint;
     private final ApiResponseAccessDeniedHandler accessDeniedHandler;
+    private final CorsProperties corsProperties;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
             CustomUserDetailsService userDetailsService,
             ApiResponseAuthenticationEntryPoint authenticationEntryPoint,
-            ApiResponseAccessDeniedHandler accessDeniedHandler) {
+            ApiResponseAccessDeniedHandler accessDeniedHandler,
+            CorsProperties corsProperties) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.corsProperties = corsProperties;
     }
 
     @Bean
@@ -90,10 +93,21 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * Allowed origins come from {@link CorsProperties} rather than being hardcoded, so a frontend on
+     * a non-default port or a deployed host can be permitted without a rebuild.
+     *
+     * <p>They are applied with {@code setAllowedOriginPatterns} rather than {@code setAllowedOrigins}
+     * so subdomain patterns such as {@code https://*.example.com} are usable. Pattern matching also
+     * keeps {@code allowCredentials=true} working, because Spring echoes the request's actual origin
+     * back instead of a literal wildcard, which it refuses to combine with credentials.
+     * {@link CorsProperties} rejects a bare {@code "*"} so this flexibility cannot be turned into an
+     * open credentialed policy.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOriginPatterns(corsProperties.allowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

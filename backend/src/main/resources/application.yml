@@ -57,6 +57,11 @@ vendorsphere:
     # Requirement 33.7: uploaded files live on the local filesystem under this directory. The
     # container deployment mounts a volume here (see task 22.6) so files survive restarts.
     base-directory: ${ATTACHMENT_BASE_DIR:./data/attachments}
+  cors:
+    # Browser origins allowed to call the API. Comma-separated; entries are matched as patterns, so
+    # https://*.example.com is legal. Defaults to the local frontend documented in the README.
+    # "*" is rejected at startup because the policy sends Access-Control-Allow-Credentials: true.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 springdoc:
   api-docs:

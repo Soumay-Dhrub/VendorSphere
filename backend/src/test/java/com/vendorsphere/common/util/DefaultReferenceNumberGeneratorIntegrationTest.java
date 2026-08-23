@@ -3,21 +3,14 @@ package com.vendorsphere.common.util;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.vendorsphere.common.repository.ReferenceSequenceRepository;
-import com.vendorsphere.organization.entity.Organization;
-import com.vendorsphere.organization.repository.OrganizationRepository;
+import com.vendorsphere.testsupport.AbstractIntegrationTest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Exercises the real {@code UPDATE ... RETURNING} allocation against PostgreSQL, because the upsert
@@ -25,15 +18,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *
  * <p>The generator is built by hand with a fixed clock so the year segment is deterministic; the
  * repository under it is the container-backed Spring bean.
+ *
+ * <p>Every test is transactional, so the counters it allocates roll back and the shared database
+ * carries none of them into another class. Each test also allocates against a newly created
+ * organization, so the expected {@code 001} start does not depend on the database being empty.
  */
-@SpringBootTest
-@ActiveProfiles("test")
-@Testcontainers
-class DefaultReferenceNumberGeneratorIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+class DefaultReferenceNumberGeneratorIntegrationTest extends AbstractIntegrationTest {
 
     private static final Clock CLOCK_2026 =
             Clock.fixed(Instant.parse("2026-03-04T10:15:30Z"), ZoneOffset.UTC);
@@ -41,24 +31,18 @@ class DefaultReferenceNumberGeneratorIntegrationTest {
     @Autowired
     private ReferenceSequenceRepository sequenceRepository;
 
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
     private ReferenceNumberGenerator generator(Clock clock) {
         return new DefaultReferenceNumberGenerator(sequenceRepository, clock);
     }
 
-    private UUID newOrganization() {
-        Organization organization = new Organization();
-        organization.setName("Reference Test Org");
-        organization.setSlug("ref-" + UUID.randomUUID());
-        return organizationRepository.saveAndFlush(organization).getId();
+    private UUID newOrganizationId() {
+        return newOrganization("ref").getId();
     }
 
     @Test
     @Transactional
     void firstAllocationIsZeroPaddedOneAndSubsequentOnesIncrement() {
-        UUID organizationId = newOrganization();
+        UUID organizationId = newOrganizationId();
         ReferenceNumberGenerator generator = generator(CLOCK_2026);
 
         assertThat(generator.allocate(organizationId, ReferencePrefix.RFQ)).isEqualTo("RFQ-2026-001");
@@ -69,7 +53,7 @@ class DefaultReferenceNumberGeneratorIntegrationTest {
     @Test
     @Transactional
     void sequencesAreIndependentPerPrefix() {
-        UUID organizationId = newOrganization();
+        UUID organizationId = newOrganizationId();
         ReferenceNumberGenerator generator = generator(CLOCK_2026);
 
         generator.allocate(organizationId, ReferencePrefix.PO);
@@ -82,8 +66,8 @@ class DefaultReferenceNumberGeneratorIntegrationTest {
     @Test
     @Transactional
     void sequencesAreIndependentPerOrganization() {
-        UUID first = newOrganization();
-        UUID second = newOrganization();
+        UUID first = newOrganizationId();
+        UUID second = newOrganizationId();
         ReferenceNumberGenerator generator = generator(CLOCK_2026);
 
         generator.allocate(first, ReferencePrefix.VEN);
@@ -95,7 +79,7 @@ class DefaultReferenceNumberGeneratorIntegrationTest {
     @Test
     @Transactional
     void sequencesRestartInTheFollowingYear() {
-        UUID organizationId = newOrganization();
+        UUID organizationId = newOrganizationId();
 
         generator(CLOCK_2026).allocate(organizationId, ReferencePrefix.PR);
         generator(CLOCK_2026).allocate(organizationId, ReferencePrefix.PR);
@@ -108,7 +92,7 @@ class DefaultReferenceNumberGeneratorIntegrationTest {
     @Test
     @Transactional
     void allocationPersistsTheCounterOnTheCallersTransaction() {
-        UUID organizationId = newOrganization();
+        UUID organizationId = newOrganizationId();
 
         generator(CLOCK_2026).allocate(organizationId, ReferencePrefix.VEN);
         generator(CLOCK_2026).allocate(organizationId, ReferencePrefix.VEN);

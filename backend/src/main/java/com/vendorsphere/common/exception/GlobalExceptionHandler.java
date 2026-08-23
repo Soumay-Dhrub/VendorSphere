@@ -1,5 +1,6 @@
 package com.vendorsphere.common.exception;
 
+import com.vendorsphere.common.attachment.AttachmentService;
 import com.vendorsphere.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +49,17 @@ public class GlobalExceptionHandler {
             ObjectOptimisticLockingFailureException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(OPTIMISTIC_LOCK_MESSAGE));
+    }
+
+    /**
+     * Requirement 33.4: a request cut off by Spring's own multipart limit never reaches
+     * {@code AttachmentService}, so it is mapped here to the same 413 and the same wording.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(
+            MaxUploadSizeExceededException ex) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ApiResponse.error(AttachmentService.SIZE_LIMIT_MESSAGE));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -10,7 +10,6 @@
 import { apiGet, apiGetPage, apiPost } from "./client";
 import type {
   AttachmentResponse,
-  Decimal,
   InvoiceStatus,
   IsoDate,
   IsoInstant,

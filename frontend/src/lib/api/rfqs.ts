@@ -17,7 +17,6 @@ import {
 } from "./client";
 import type {
   AttachmentResponse,
-  IsoDate,
   IsoInstant,
   PageParams,
   PageResponse,

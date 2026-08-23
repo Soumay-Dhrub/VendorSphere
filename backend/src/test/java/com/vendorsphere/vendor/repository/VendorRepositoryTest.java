@@ -145,6 +145,33 @@ class VendorRepositoryTest {
                 mine.getId(), theirVendor.getEmail())).isFalse();
     }
 
+    /**
+     * The finder the vendor-scoped access guard resolves a caller through (Requirements 2.7, 30.8).
+     * It is organization-keyed like every other read, so a portal user can never resolve to a vendor
+     * of another tenant (Requirement 30.10).
+     */
+    @Test
+    @Transactional
+    void resolvesTheVendorLinkedToAPortalUserOnlyWithinItsOwnOrganization() {
+        Organization mine = organization();
+        Organization theirs = organization();
+        User portalUser = user(mine);
+        User unlinkedUser = user(mine);
+
+        Vendor linked = vendor(mine, "VEN-2026-007", "Eta Components");
+        linked.setUser(portalUser);
+        vendorRepository.saveAndFlush(linked);
+        vendorRepository.saveAndFlush(vendor(mine, "VEN-2026-008", "Theta Tools"));
+        entityManager.flush();
+
+        assertThat(vendorRepository.findIdsByUserIdAndOrganizationId(portalUser.getId(), mine.getId()))
+                .containsExactly(linked.getId());
+        assertThat(vendorRepository.findIdsByUserIdAndOrganizationId(portalUser.getId(), theirs.getId()))
+                .isEmpty();
+        assertThat(vendorRepository.findIdsByUserIdAndOrganizationId(
+                unlinkedUser.getId(), mine.getId())).isEmpty();
+    }
+
     @Test
     @Transactional
     void countsVendorsReferencingACategoryWithinTheOrganization() {

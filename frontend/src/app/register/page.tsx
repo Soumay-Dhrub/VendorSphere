@@ -67,7 +67,7 @@ export default function RegisterPage() {
             <label className="mb-1.5 block text-sm text-slate-300">Organization name</label>
             <input
               {...register("organizationName")}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
             {errors.organizationName && (
               <p className="mt-1 text-xs text-red-400">{errors.organizationName.message}</p>
@@ -79,7 +79,7 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-sm text-slate-300">First name</label>
               <input
                 {...register("firstName")}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
               {errors.firstName && (
                 <p className="mt-1 text-xs text-red-400">{errors.firstName.message}</p>
@@ -89,7 +89,7 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-sm text-slate-300">Last name</label>
               <input
                 {...register("lastName")}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
               {errors.lastName && (
                 <p className="mt-1 text-xs text-red-400">{errors.lastName.message}</p>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
             <input
               type="email"
               {...register("email")}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
             {errors.email && (
               <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>
@@ -113,7 +113,7 @@ export default function RegisterPage() {
             <label className="mb-1.5 block text-sm text-slate-300">Phone (optional)</label>
             <input
               {...register("phone")}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
@@ -122,7 +122,7 @@ export default function RegisterPage() {
             <input
               type="password"
               {...register("password")}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
             {errors.password && (
               <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>
@@ -134,7 +134,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-lg bg-emerald-500 py-2.5 text-sm font-medium text-slate-950 transition hover:bg-emerald-400 disabled:opacity-60"
+            className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:brightness-110 disabled:opacity-60"
           >
             {isSubmitting ? "Creating account..." : "Create account"}
           </button>

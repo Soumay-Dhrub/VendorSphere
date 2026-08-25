@@ -18,18 +18,31 @@ import {
 
 /* ---------- shared motion primitives ---------- */
 
-const REDUCED =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/**
+ * Client-side reduced-motion flag. Read inside an effect so the first
+ * (server) render always matches the client, avoiding hydration mismatches.
+ */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
 
 /** Fires once when the element enters the viewport. */
 function useInView<T extends HTMLElement>(threshold = 0.25) {
+  const reduced = usePrefersReducedMotion();
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    if (REDUCED) { setInView(true); return; }
+    if (reduced) { setInView(true); return; }
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -56,6 +69,7 @@ function Reveal({
   className?: string;
 }) {
   const [ref, inView] = useInView<HTMLDivElement>(0.15);
+  const reduced = usePrefersReducedMotion();
   return (
     <div
       ref={ref}
@@ -63,7 +77,7 @@ function Reveal({
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? "translateY(0)" : "translateY(16px)",
-        transition: REDUCED ? "none" : `opacity .55s ease ${delay}ms, transform .55s ease ${delay}ms`,
+        transition: reduced ? "none" : `opacity .55s ease ${delay}ms, transform .55s ease ${delay}ms`,
       }}
     >
       {children}
@@ -73,9 +87,10 @@ function Reveal({
 
 /** Counts a number up once, triggered by `active`. */
 function useCountUp(target: number, active: boolean, duration = 1200) {
-  const [value, setValue] = useState(REDUCED ? target : 0);
+  const reduced = usePrefersReducedMotion();
+  const [value, setValue] = useState(reduced ? target : 0);
   useEffect(() => {
-    if (!active || REDUCED) return;
+    if (!active || reduced) return;
     let frame = 0;
     const start = performance.now();
     const tick = (now: number) => {
@@ -143,6 +158,7 @@ const ROLES = [
 type Activity = { id: number; text: string };
 
 function HeroDashboard() {
+  const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLDivElement>(0.35);
   const [rfqs, setRfqs] = useState(11);
   const [deliveries, setDeliveries] = useState(5);
@@ -153,7 +169,7 @@ function HeroDashboard() {
   ]);
 
   useEffect(() => {
-    if (!inView || REDUCED) return;
+    if (!inView || reduced) return;
     const steps: [number, () => void][] = [
       [2500, () => { setRfqs(12); pushActivity("RFQ-1042 opened for bidding"); }],
       [5200, () => pushActivity("Vendor ABC submitted quotation for RFQ-1042")],
@@ -211,7 +227,7 @@ function HeroDashboard() {
           <li
             key={activity.id}
             className="flex items-center gap-2 px-1 py-1 text-xs text-slate-400"
-            style={{ animation: REDUCED ? undefined : "fade-slide .6s ease both" }}
+            style={{ animation: reduced ? undefined : "fade-slide .6s ease both" }}
           >
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
             {activity.text}
@@ -243,11 +259,12 @@ function Kpi({ label, value, highlight }: { label: string; value: string; highli
 /* ---------- lifecycle (Priority 2): sequential stage reveal ---------- */
 
 function Pipeline() {
+  const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLOListElement>(0.3);
   return (
     <ol className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8" aria-label="Procurement lifecycle">
       {STAGES.map(([label, Icon], i) => {
-        const shown = inView || REDUCED;
+        const shown = inView || reduced;
         return (
           <li
             key={label}
@@ -255,12 +272,12 @@ function Pipeline() {
             style={{
               opacity: shown ? 1 : 0,
               transform: shown ? "translateY(0)" : "translateY(14px)",
-              transition: REDUCED ? "none" : `opacity .45s ease ${i * 220}ms, transform .45s ease ${i * 220}ms`,
+              transition: reduced ? "none" : `opacity .45s ease ${i * 220}ms, transform .45s ease ${i * 220}ms`,
             }}
           >
             <Icon className="h-5 w-5 text-emerald-400" />
             <span className="text-center text-[11px] leading-tight text-slate-300">{label}</span>
-            {shown && !REDUCED && (
+            {shown && !reduced && (
               <span
                 aria-hidden
                 className="absolute inset-x-2 bottom-1 h-0.5 origin-left rounded-full bg-emerald-400/70"
@@ -280,6 +297,7 @@ function Pipeline() {
 /* ---------- comparison showcase (Priority 3) ---------- */
 
 function ComparisonShowcase() {
+  const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLDivElement>(0.3);
   const winnerScore = useCountUp(91, inView, 1400);
 
@@ -311,7 +329,7 @@ function ComparisonShowcase() {
                 className="group"
                 style={{
                   opacity: inView ? 1 : 0,
-                  transition: REDUCED ? "none" : `opacity .5s ease ${i * 160}ms`,
+                  transition: reduced ? "none" : `opacity .5s ease ${i * 160}ms`,
                 }}
               >
                 <th scope="row" className="px-5 py-3.5">
@@ -346,6 +364,7 @@ function ComparisonShowcase() {
 const MATCH_CHECKS = ["Quantity match", "Unit price match", "Delivery confirmed", "Duplicate check"];
 
 function MatchDemo() {
+  const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLDivElement>(0.35);
   const [checkIndex, setCheckIndex] = useState(0);
   const [matched, setMatched] = useState(false);
@@ -353,8 +372,8 @@ function MatchDemo() {
 
   // Sequential checks once in view (or immediately after toggle reset).
   useEffect(() => {
-    if (!inView || REDUCED) {
-      if (REDUCED) { setCheckIndex(MATCH_CHECKS.length); setMatched(true); }
+    if (!inView || reduced) {
+      if (reduced) { setCheckIndex(MATCH_CHECKS.length); setMatched(true); }
       return;
     }
     const timers = MATCH_CHECKS.map((_, i) =>
@@ -367,7 +386,7 @@ function MatchDemo() {
     setMismatch(false);
     setMatched(false);
     setCheckIndex(0);
-    if (REDUCED) { setCheckIndex(MATCH_CHECKS.length); setMatched(true); return; }
+    if (reduced) { setCheckIndex(MATCH_CHECKS.length); setMatched(true); return; }
     MATCH_CHECKS.forEach((_, i) =>
       setTimeout(() => setCheckIndex(i + 1), 700 + i * 500));
     setTimeout(() => setMatched(true), 700 + MATCH_CHECKS.length * 500);
@@ -389,7 +408,7 @@ function MatchDemo() {
             style={{
               opacity: inView ? 1 : 0,
               transform: inView ? "translateX(0)" : "translateX(-14px)",
-              transition: REDUCED ? "none" : `all .5s ease ${i * 180}ms`,
+              transition: reduced ? "none" : `all .5s ease ${i * 180}ms`,
             }}
           >
             <span className="font-medium text-white">{source.label}</span>
@@ -475,6 +494,7 @@ function MatchDemo() {
 const SCORE_METRICS = [["Delivery", 92], ["Quality", 88], ["Pricing", 80], ["Responsiveness", 91], ["Fulfilment", 85]] as const;
 
 function Scorecard() {
+  const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLDivElement>(0.4);
   const overall = useCountUp(87, inView, 1300);
   return (
@@ -507,7 +527,7 @@ function Scorecard() {
                   className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"
                   style={{
                     width: `${inView ? value : 0}%`,
-                    transition: REDUCED ? "none" : "width 1.1s cubic-bezier(.22,.61,.36,1)",
+                    transition: reduced ? "none" : "width 1.1s cubic-bezier(.22,.61,.36,1)",
                   }}
                 />
               </div>
@@ -522,6 +542,7 @@ function Scorecard() {
 /* ---------- role switcher (Priority 5) ---------- */
 
 function RoleSwitcher() {
+  const reduced = usePrefersReducedMotion();
   const [active, setActive] = useState(ROLES[0]);
   return (
     <div>
@@ -544,7 +565,7 @@ function RoleSwitcher() {
         ))}
       </div>
       <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-        <p key={active.key + "-body"} className="text-sm leading-6 text-slate-300" style={{ animation: REDUCED ? undefined : "fade-in .4s ease" }}>
+        <p key={active.key + "-body"} className="text-sm leading-6 text-slate-300" style={{ animation: reduced ? undefined : "fade-in .4s ease" }}>
           {active.body}
         </p>
         <ul key={active.key} className="mt-4 space-y-2">
@@ -552,7 +573,7 @@ function RoleSwitcher() {
             <li
               key={line}
               className="rounded-lg border border-slate-800 bg-slate-900/60 px-3.5 py-2.5 text-xs text-slate-300"
-              style={{ animation: REDUCED ? undefined : "fade-slide-up .45s ease both" }}
+              style={{ animation: reduced ? undefined : "fade-slide-up .45s ease both" }}
             >
               {line}
             </li>
@@ -570,6 +591,7 @@ function RoleSwitcher() {
 /* ---------- analytics preview (Priority 7) ---------- */
 
 function AnalyticsPreview() {
+  const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLDivElement>(0.35);
   const spend = useCountUp(48, inView, 1400);
   const vendors = useCountUp(28, inView, 1200);
@@ -595,7 +617,7 @@ function AnalyticsPreview() {
             className="flex-1 rounded-sm bg-gradient-to-t from-teal-600/60 to-emerald-400/80"
             style={{
               height: inView ? `${height}%` : "4%",
-              transition: REDUCED ? "none" : `height .8s cubic-bezier(.22,.61,.36,1) ${i * 90}ms`,
+              transition: reduced ? "none" : `height .8s cubic-bezier(.22,.61,.36,1) ${i * 90}ms`,
             }}
           />
         ))}

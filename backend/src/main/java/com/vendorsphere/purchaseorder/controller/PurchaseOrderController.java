@@ -1,6 +1,8 @@
 package com.vendorsphere.purchaseorder.controller;
 
 import com.vendorsphere.common.dto.ApiResponse;
+import com.vendorsphere.common.dto.PageResponse;
+import com.vendorsphere.common.util.PageSupport;
 import com.vendorsphere.purchaseorder.dto.PurchaseOrderCancelRequest;
 import com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse;
 import com.vendorsphere.purchaseorder.dto.PurchaseOrderUpdateRequest;
@@ -37,8 +39,22 @@ public class PurchaseOrderController {
     @GetMapping("/purchase-orders")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List purchase orders (vendor users see only their own, no drafts)")
-    public ApiResponse<List<PurchaseOrderResponse>> list() {
-        return ApiResponse.ok(purchaseOrderService.list());
+    public ApiResponse<PageResponse<PurchaseOrderResponse>> list(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
+        List<PurchaseOrderResponse> rows = purchaseOrderService.list();
+        var pageable = PageSupport.pageable(page, size, sort, direction,
+                SortWhitelistHolder.PO_SORT);
+        return ApiResponse.ok(PageSupport.map(
+                new org.springframework.data.domain.PageImpl<>(rows, pageable, rows.size())));
+    }
+
+    /** Sort fields for the in-memory order listing. */
+    static final class SortWhitelistHolder {
+        static final com.vendorsphere.common.util.SortWhitelist PO_SORT =
+                com.vendorsphere.common.util.SortWhitelist.of("createdAt", "status");
     }
 
     @GetMapping("/purchase-orders/{id}")

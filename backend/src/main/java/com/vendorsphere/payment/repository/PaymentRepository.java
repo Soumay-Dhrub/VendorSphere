@@ -31,4 +31,14 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
             ORDER BY 2 DESC
             """, nativeQuery = true)
     List<Object[]> outstandingByVendor(@Param("organizationId") UUID organizationId);
+
+    /** Every payment in one organization, newest first, for GET /payments. */
+    @Query(value = """
+            SELECT p.* FROM payments p
+            JOIN invoices i ON i.id = p.invoice_id
+            WHERE i.organization_id = :organizationId
+            ORDER BY p.created_at DESC
+            """, nativeQuery = true)
+    List<com.vendorsphere.payment.entity.Payment> findAllByOrganization(
+            @Param("organizationId") UUID organizationId);
 }

@@ -1,6 +1,8 @@
 package com.vendorsphere.invoice.controller;
 
 import com.vendorsphere.common.dto.ApiResponse;
+import com.vendorsphere.common.dto.PageResponse;
+import com.vendorsphere.common.util.PageSupport;
 import com.vendorsphere.invoice.dto.InvoiceResponse;
 import com.vendorsphere.invoice.dto.InvoiceSubmitRequest;
 import com.vendorsphere.invoice.service.InvoiceService;
@@ -38,8 +40,16 @@ public class InvoiceController {
     @GetMapping("/invoices")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List invoices (vendor users see only their own)")
-    public ApiResponse<List<InvoiceResponse>> list() {
-        return ApiResponse.ok(invoiceService.list());
+    public ApiResponse<PageResponse<InvoiceResponse>> list(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
+        List<InvoiceResponse> rows = invoiceService.list();
+        var pageable = PageSupport.pageable(page, size, sort, direction,
+                com.vendorsphere.common.util.SortWhitelist.of("createdAt", "status", "dueDate"));
+        return ApiResponse.ok(PageSupport.map(
+                new org.springframework.data.domain.PageImpl<>(rows, pageable, rows.size())));
     }
 
     @GetMapping("/invoices/{id}")

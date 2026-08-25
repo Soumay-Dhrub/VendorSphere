@@ -130,4 +130,14 @@ public class PaymentService {
         return new com.vendorsphere.payment.dto.OutstandingResponse(
                 Money.money(total), byVendor);
     }
+
+    /**
+     * Every payment of the caller's organization, newest first (API surface:
+     * GET /payments).
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<com.vendorsphere.payment.entity.Payment> list() {
+        return paymentRepository.findAllByOrganization(
+                SecurityUtils.getCurrentOrganizationId());
+    }
 }

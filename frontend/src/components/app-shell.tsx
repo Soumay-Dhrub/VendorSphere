@@ -141,8 +141,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 title="Toggle light mode"
                 onClick={() => {
                   playClick();
-                  const root = document.documentElement;
-                  const light = root.classList.toggle("light");
+                  const light = !document.documentElement.classList.contains("light");
+                  document.documentElement.classList.toggle("light", light);
+                  document.body.classList.toggle("light", light);
                   try {
                     localStorage.setItem("vs-theme", light ? "light" : "dark");
                   } catch {}

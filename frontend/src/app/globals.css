@@ -80,55 +80,55 @@ body {
    (☀️/🌙 button in the app shell, persisted as "vs-theme").
    Escaped class names cover the /opacity variants the app uses.
    ------------------------------------------------------------------ */
-html.light {
+:is(html.light, body.light) {
   background: #f8fafc;
   color: #0f172a;
 }
 
 /* surfaces */
-html.light .bg-slate-950,
-html.light .bg-slate-950\/70,
-html.light .bg-slate-950\/60,
-html.light .bg-slate-950\/50,
-html.light .bg-slate-950\/40,
-html.light .bg-slate-900\/80,
-html.light .bg-slate-900\/70,
-html.light .bg-slate-900\/60,
-html.light .bg-slate-900\/50,
-html.light .bg-slate-900\/40 {
+:is(html.light, body.light) .bg-slate-950,
+:is(html.light, body.light) .bg-slate-950\/70,
+:is(html.light, body.light) .bg-slate-950\/60,
+:is(html.light, body.light) .bg-slate-950\/50,
+:is(html.light, body.light) .bg-slate-950\/40,
+:is(html.light, body.light) .bg-slate-900\/80,
+:is(html.light, body.light) .bg-slate-900\/70,
+:is(html.light, body.light) .bg-slate-900\/60,
+:is(html.light, body.light) .bg-slate-900\/50,
+:is(html.light, body.light) .bg-slate-900\/40 {
   background-color: #ffffff !important;
 }
-html.light .bg-slate-900 { background-color: #f8fafc !important; }
-html.light .bg-slate-800,
-html.light .bg-slate-800\/70 { background-color: #e2e8f0 !important; }
+:is(html.light, body.light) .bg-slate-900 { background-color: #f8fafc !important; }
+:is(html.light, body.light) .bg-slate-800,
+:is(html.light, body.light) .bg-slate-800\/70 { background-color: #e2e8f0 !important; }
 
 /* text */
-html.light .text-white { color: #0f172a !important; }
-html.light .text-slate-200 { color: #1e293b !important; }
-html.light .text-slate-300 { color: #334155 !important; }
-html.light .text-slate-400 { color: #475569 !important; }
-html.light .text-slate-500 { color: #64748b !important; }
-html.light .text-slate-600 { color: #94a3b8 !important; }
+:is(html.light, body.light) .text-white { color: #0f172a !important; }
+:is(html.light, body.light) .text-slate-200 { color: #1e293b !important; }
+:is(html.light, body.light) .text-slate-300 { color: #334155 !important; }
+:is(html.light, body.light) .text-slate-400 { color: #475569 !important; }
+:is(html.light, body.light) .text-slate-500 { color: #64748b !important; }
+:is(html.light, body.light) .text-slate-600 { color: #94a3b8 !important; }
 
 /* accents stay emerald but darken for contrast on white */
-html.light .text-emerald-300,
-html.light .text-emerald-400 { color: #047857 !important; }
-html.light .text-emerald-200 { color: #065f46 !important; }
-html.light .text-amber-300 { color: #b45309 !important; }
-html.light .text-rose-300 { color: #be123c !important; }
-html.light .text-sky-300 { color: #0369a1 !important; }
-html.light .text-violet-300 { color: #6d28d9 !important; }
+:is(html.light, body.light) .text-emerald-300,
+:is(html.light, body.light) .text-emerald-400 { color: #047857 !important; }
+:is(html.light, body.light) .text-emerald-200 { color: #065f46 !important; }
+:is(html.light, body.light) .text-amber-300 { color: #b45309 !important; }
+:is(html.light, body.light) .text-rose-300 { color: #be123c !important; }
+:is(html.light, body.light) .text-sky-300 { color: #0369a1 !important; }
+:is(html.light, body.light) .text-violet-300 { color: #6d28d9 !important; }
 
 /* borders */
-html.light .border-slate-800,
-html.light .border-slate-800\/70 { border-color: #cbd5e1 !important; }
-html.light .border-slate-700 { border-color: #cbd5e1 !important; }
-html.light .border-slate-600 { border-color: #94a3b8 !important; }
+:is(html.light, body.light) .border-slate-800,
+:is(html.light, body.light) .border-slate-800\/70 { border-color: #cbd5e1 !important; }
+:is(html.light, body.light) .border-slate-700 { border-color: #cbd5e1 !important; }
+:is(html.light, body.light) .border-slate-600 { border-color: #94a3b8 !important; }
 
 /* rings & soft accent fills read fine on white already; inputs */
-html.light input,
-html.light select,
-html.light textarea {
+:is(html.light, body.light) input,
+:is(html.light, body.light) select,
+:is(html.light, body.light) textarea {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }

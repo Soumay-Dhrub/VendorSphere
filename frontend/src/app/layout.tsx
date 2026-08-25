@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem("vs-theme")==="light"){document.documentElement.classList.add("light")}}catch(e){}`,
+            __html: `try{if(localStorage.getItem("vs-theme")==="light"){document.documentElement.classList.add("light");document.body.classList.add("light")}}catch(e){}`,
           }}
         />
         <Providers>{children}</Providers>

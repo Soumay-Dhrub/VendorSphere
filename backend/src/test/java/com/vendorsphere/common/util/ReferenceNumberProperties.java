@@ -32,7 +32,7 @@ class ReferenceNumberProperties {
 
     /** Requirement 1.1 and 1.2, transcribed: prefix, four-digit year, at least three digits. */
     private static final Pattern REFERENCE =
-            Pattern.compile("^(VEN|PR|RFQ|PO|DEL)-\\d{4}-\\d{3,}$");
+            Pattern.compile("^(VEN|PR|RFQ|QUOT|PO|DEL)-\\d{4}-\\d{3,}$");
 
     /**
      * Years across the whole four-digit range, with the boundaries and the current business year

@@ -14,6 +14,8 @@ public enum ReferencePrefix {
     PR,
     /** RFQ numbers. */
     RFQ,
+    /** Quotation numbers. */
+    QUOT,
     /** Purchase order numbers. */
     PO,
     /** Delivery numbers. */

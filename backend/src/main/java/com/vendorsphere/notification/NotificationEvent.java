@@ -25,5 +25,12 @@ public enum NotificationEvent {
     PAYMENT_RECORDED,
     INVOICE_MATCH_EXCEPTION_RAISED,
     OVERDUE_DELIVERY_DETECTED,
-    VENDOR_DOCUMENT_EXPIRING
+    VENDOR_DOCUMENT_EXPIRING,
+
+    /**
+     * An RFQ the vendor was invited to was cancelled (Requirement 11.7). Added after the original
+     * sixteen rather than renaming anything: the constant name is part of the dedupe key of
+     * Requirement 28.9.
+     */
+    RFQ_CANCELLED
 }

@@ -42,10 +42,67 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950/60 px-6 py-10">
-      <div aria-hidden className="pointer-events-none absolute left-[-12%] top-[-18%] h-[30rem] w-[30rem] animate-pulse rounded-full bg-emerald-500/10 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute bottom-[-22%] right-[-12%] h-[32rem] w-[32rem] rounded-full bg-teal-500/10 blur-3xl" />
-      <div className="relative w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-2xl shadow-black/40">
+    <div className="grid min-h-screen overflow-hidden bg-slate-950 lg:grid-cols-[1.05fr_1fr]">
+      {/* Animated brand panel */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
+        <div aria-hidden className="pointer-events-none absolute left-[-12%] top-[-18%] h-[28rem] w-[28rem] animate-pulse rounded-full bg-emerald-500/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute bottom-[-22%] right-[-18%] h-[30rem] w-[30rem] rounded-full bg-teal-500/15 blur-3xl" />
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#34d399 1px, transparent 1px), linear-gradient(90deg, #34d399 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+            maskImage: "radial-gradient(ellipse at 45% 40%, black 30%, transparent 75%)",
+          }}
+        />
+        <div className="relative">
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-emerald-300">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            </span>
+            Start in minutes
+          </p>
+          <h2 className="mt-6 max-w-md text-4xl font-semibold leading-tight tracking-tight text-white">
+            Your procurement pipeline,{" "}
+            <span className="bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">
+              live from day one.
+            </span>
+          </h2>
+          <ul className="mt-8 space-y-3 text-sm text-slate-400">
+            {[
+              "Invite vendors and collect scored quotations",
+              "Award with justification — fully audited",
+              "Match every invoice before it is paid",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-3">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                  <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 fill-current"><path d="M4.6 8.4 2 5.8l1.1-1.1 1.5 1.5 4.3-4.3L10 3z" /></svg>
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="relative mt-10 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+            <p className="whitespace-nowrap text-xs text-slate-400 [animation:ticker_16s_linear_infinite]">
+              PO-2026-0031 delivered · INV-2026-0088 matched · Vendor score updated · RFQ-2026-014 awarded · Payment recorded ·&nbsp;
+              PO-2026-0031 delivered · INV-2026-0088 matched · Vendor score updated · RFQ-2026-014 awarded · Payment recorded
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      {/* Form panel */}
+      <section className="flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-2xl shadow-black/40">
         <div className="mb-7 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 shadow-lg shadow-emerald-500/20">
             <Boxes className="h-5 w-5 text-slate-950" strokeWidth={2.4} />
@@ -147,6 +204,7 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
+      </section>
     </div>
   );
 }

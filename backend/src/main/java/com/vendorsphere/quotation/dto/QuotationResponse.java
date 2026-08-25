@@ -9,11 +9,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * A quotation as returned by a read. Every monetary figure is read-only computed data
- * (Requirement 13.7); {@link #redacted} is the OPEN-RFQ projection for internal users, which carries
- * no prices at all while still identifying the bid (Requirement 14.5).
- */
 public record QuotationResponse(
         UUID id,
         UUID rfqId,
@@ -83,7 +78,6 @@ public record QuotationResponse(
                 items);
     }
 
-    /** The OPEN-RFQ projection: identity and status without a single price (Requirement 14.5). */
     public static QuotationResponse redacted(Quotation quotation) {
         return new QuotationResponse(
                 quotation.getId(),

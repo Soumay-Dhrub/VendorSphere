@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-/** Payment endpoints (Requirement 25; API surface). */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Payments")

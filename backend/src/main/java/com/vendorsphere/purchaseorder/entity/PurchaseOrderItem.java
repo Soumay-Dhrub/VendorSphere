@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
-/** One line of a purchase order, carrying the cumulative delivered quantity (Requirement 21.1). */
 @Entity
 @Table(name = "purchase_order_items")
 public class PurchaseOrderItem extends CreatedOnlyEntity {

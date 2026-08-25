@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/** A vendor's invoice against a purchase order (Requirement 22). */
 @Entity
 @Table(name = "invoices")
 public class Invoice extends BaseEntity {

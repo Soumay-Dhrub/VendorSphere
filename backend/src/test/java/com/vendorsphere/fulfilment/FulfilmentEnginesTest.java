@@ -11,10 +11,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * The pure engines of the fulfilment and settlement path: three-way match findings in precedence
- * order (Requirement 23) and performance scoring bounds/defaults (Requirement 26).
- */
 class FulfilmentEnginesTest {
 
     private static BigDecimal money(String v) {
@@ -23,7 +19,6 @@ class FulfilmentEnginesTest {
 
     // ----- ThreeWayMatcher (Requirement 23) -----
 
-    /** Requirements 23.2 and 23.3: over-invoiced quantity and price drift both surface. */
     @Test
     void quantityAndPriceMismatchesAreDetected() {
         List<ThreeWayMatcher.Finding> findings = ThreeWayMatcher.match(
@@ -40,7 +35,6 @@ class FulfilmentEnginesTest {
         assertThat(findings.get(0).actualValue()).isEqualTo("25");
     }
 
-    /** Requirements 23.4, 23.5 and 23.7: precedence puts duplicate first, then missing delivery. */
     @Test
     void precedenceOrdersDuplicateBeforeMissingDelivery() {
         List<ThreeWayMatcher.Finding> findings = ThreeWayMatcher.match(
@@ -54,7 +48,6 @@ class FulfilmentEnginesTest {
                 .isEqualTo(MatchFindingType.DUPLICATE_INVOICE);
     }
 
-    /** A penny within tolerance is not a price mismatch (Requirement 23.3). */
     @Test
     void aOnePennyPriceDifferenceIsTolerated() {
         List<ThreeWayMatcher.Finding> findings = ThreeWayMatcher.match(
@@ -72,7 +65,6 @@ class FulfilmentEnginesTest {
 
     // ----- PerformanceCalculator (Requirement 26) -----
 
-    /** Requirements 26.1 through 26.7 on hand-computed figures with a zero-denominator default. */
     @Test
     void metricsAreComputedWithDefaultsAndBoundedMeans() {
         PerformanceCalculator.Scores scores = PerformanceCalculator.compute(
@@ -92,7 +84,6 @@ class FulfilmentEnginesTest {
                 .isEqualByComparingTo(money("73.60")); // mean of 90+98+80+50+50
     }
 
-    /** Requirement 26.11: rating maps score/20 at scale 2 and stays inside [0, 5]. */
     @Test
     void vendorRatingDerivesFromTheScore() {
         assertThat(PerformanceCalculator.vendorRating(new BigDecimal("87.00")))

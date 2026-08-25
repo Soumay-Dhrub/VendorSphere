@@ -31,36 +31,12 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * The compliance documents stored against a vendor (Requirement 5).
- *
- * <p>The file itself is stored by {@link AttachmentService} under the {@code VENDOR_DOCUMENT} owner
- * type, so content-type and size rules live in one place for the whole platform; this service stores
- * the metadata row a vendor profile reads. The accepted-type allowlist of Requirement 5.2 is enforced
- * here rather than at the message converter, so an unknown type is answered with the pinned 400 that
- * lists the six types instead of a generic deserialization error (Requirement 5.3).
- *
- * <p>Reads are keyed on the caller's organization, so a vendor identifier belonging to another tenant
- * misses and surfaces as 404 {@code Vendor not found} - the wording {@link VendorService} pins -
- * rather than 403 (Requirements 2.6, 30.10). Whether the caller may see the vendor at all when they
- * hold the VENDOR role is decided by {@link VendorAccessGuard}: a vendor user reaches only its own
- * documents (Requirement 30.8).
- *
- * <p>Expiry states are derived on read from {@link DocumentExpiryEvaluator}, never stored, so a list
- * response always reflects the request date.
- */
 @Service
 public class VendorDocumentService {
 
-    /** Days ahead of the evaluation date the job nudges besides the window boundary, pinned by 5.5. */
     static final int EXACTLY_7_DAYS_AHEAD = 7;
     static final int EXACTLY_1_DAY_AHEAD = 1;
 
-    /**
-     * The 400 wording of Requirement 5.3, which asks that the rejected upload be told what would have
-     * been accepted. The order follows {@link VendorDocumentType} declaration order, matching how
-     * Requirement 5.2 lists them.
-     */
     static final String UNSUPPORTED_TYPE_MESSAGE =
             "Unsupported vendor document type. Accepted document types: "
                     + String.join(", ", typeNames());
@@ -88,15 +64,6 @@ public class VendorDocumentService {
         this.clock = clock;
     }
 
-    /**
-     * Stores one compliance document against the vendor (Requirement 5.1).
-     *
-     * <p>The type allowlist is asserted before any byte is written and before the vendor lookup, so
-     * an unknown type costs no query; the file gates then run inside the attachment service, whose
-     * owner-access hook consults the same guard the read paths use. The stored metadata row records
-     * the upload timestamp from the clock, and {@code fileUrl} points at the platform's download path
-     * for the created attachment.
-     */
     @Transactional
     public VendorDocumentResponse upload(
             UUID vendorId, VendorDocumentRequest request, MultipartFile file) {
@@ -119,10 +86,6 @@ public class VendorDocumentService {
                 vendorDocumentRepository.save(document), expiryStateOf(document));
     }
 
-    /**
-     * Lists the vendor's documents, newest upload first, each carrying its expiry state derived
-     * against the request date (Requirement 5.4).
-     */
     @Transactional(readOnly = true)
     public List<VendorDocumentResponse> list(UUID vendorId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -136,12 +99,6 @@ public class VendorDocumentService {
                 .toList();
     }
 
-    /**
-     * Loads the vendor within the caller's organization and applies the vendor-user restriction of
-     * Requirement 30.8: a caller holding the VENDOR role reaches only its own documents. The guard
-     * reports a denial as 404 with the pinned vendor wording, so another vendor's document set is
-     * indistinguishable from an unknown vendor.
-     */
     private Vendor findVisibleVendor(UUID vendorId, UUID organizationId) {
         Vendor vendor = vendorRepository.findByIdAndOrganizationId(vendorId, organizationId)
                 .orElseThrow(() -> new BusinessException(
@@ -150,16 +107,6 @@ public class VendorDocumentService {
         return vendor;
     }
 
-    /**
-     * The daily expiry evaluation behind the scheduled job (Requirement 5.5): one notification per
-     * ADMIN and per PROCUREMENT_OFFICER user of the owning organization for every document expiring
-     * exactly 30, 7 or 1 day after {@code evaluationDate}.
-     *
-     * <p>The 30-day target comes from {@link DocumentExpiryEvaluator#EXPIRING_SOON_WINDOW_DAYS}
-     * rather than being restated, so the job can never drift away from the window it mirrors. Each
-     * document fans out through {@link NotificationService#createForRole}, whose write-time dedupe
-     * keeps a re-run of the job on the same day from notifying anyone twice.
-     */
     @Transactional
     public void notifyDocumentsExpiringOn(LocalDate evaluationDate) {
         Set<LocalDate> targetDates = Set.of(

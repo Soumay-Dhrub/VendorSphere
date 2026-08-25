@@ -9,12 +9,6 @@ import java.util.function.Consumer;
 import net.jqwik.api.Arbitrary;
 import org.junit.jupiter.api.Test;
 
-/**
- * Guards the shared generators themselves: every sample must sit inside the column range the
- * design pins, so that a property using them can never fail on a value the database could not
- * store. Written as plain JUnit over sampled values rather than as jqwik properties, because the
- * property suite is reserved for the numbered correctness properties of the design.
- */
 class MoneyArbitrariesTest {
 
     private static final int SAMPLES = 200;

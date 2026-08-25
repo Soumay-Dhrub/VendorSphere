@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-/** Purchase order endpoints (Requirements 18, 19; API surface). */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Purchase Orders")

@@ -14,10 +14,6 @@ import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.cors.CorsConfiguration;
 
-/**
- * Configurable CORS allowed origins: the default keeps the documented local frontend working, and an
- * override is honoured without the API becoming open to arbitrary credentialed callers.
- */
 class CorsConfigurationSourceTest {
 
     private static final String LOCAL_FRONTEND = "http://localhost:3000";
@@ -68,10 +64,6 @@ class CorsConfigurationSourceTest {
                 .hasMessageContaining("must not contain");
     }
 
-    /**
-     * Confirms the relaxed-binding name an operator must use for the list property when configuring
-     * through the environment: {@code VENDORSPHERE_CORS_ALLOWEDORIGINS}, comma-separated.
-     */
     @Test
     void listBindsFromTheRelaxedEnvironmentVariableName() {
         new ApplicationContextRunner()
@@ -85,7 +77,6 @@ class CorsConfigurationSourceTest {
                         .containsExactly("https://app.example.com", "https://admin.example.com"));
     }
 
-    /** Exercises the real bean method; the other collaborators are unused by it. */
     private CorsConfiguration corsConfigurationFor(CorsProperties properties) {
         SecurityConfig securityConfig = new SecurityConfig(null, null, null, null, properties);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/vendors");

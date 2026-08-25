@@ -35,20 +35,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Requirements 28.6, 28.9 and 36.4 through the HTTP API rather than through the service.
- *
- * <p>The ownership rule is only worth as much as the wire behaviour it produces: the caller has to be
- * resolved from the real security context, the lookup has to miss, and {@code GlobalExceptionHandler}
- * has to render the pinned wording. A unit test with a stubbed repository can show none of that, so
- * every case here goes through {@link MockMvc} with the security filter chain in place against a real
- * PostgreSQL schema.
- *
- * <p>No {@code @Transactional} anywhere in this class, deliberately. Each request and each
- * {@code createOnce} call commits on its own, which is what makes the dedupe case below stronger than
- * the same-transaction one in {@code NotificationCreateOnceIntegrationTest}: the second insert meets a
- * row that another transaction already committed.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -79,7 +65,6 @@ class NotificationApiOwnershipIntegrationTest {
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
-    /** Users A and B share an organization; the outsider sits in a second one. */
     private String emailOfA;
     private String emailOfB;
     private String emailOfOutsider;
@@ -97,10 +82,6 @@ class NotificationApiOwnershipIntegrationTest {
         notificationOfB = notifyAboutANewEntity(userIdOf(emailOfB), "Addressed to B", "B must see this");
     }
 
-    /**
-     * Requirement 28.6: the body wording is pinned, so it is asserted and not just the status. The
-     * notification is left untouched - a 404 that still flipped the flag would be worse than a 200.
-     */
     @Test
     void markingAnotherUsersNotificationReadIsNotFoundWithThePinnedMessage() throws Exception {
         mockMvc.perform(patch("/api/v1/notifications/{id}/read", notificationOfB).with(as(emailOfA)))
@@ -111,10 +92,6 @@ class NotificationApiOwnershipIntegrationTest {
         assertThat(notificationRepository.findById(notificationOfB).orElseThrow().isRead()).isFalse();
     }
 
-    /**
-     * Tenant isolation surfaces as not-found, not as forbidden: the recipient is part of the lookup,
-     * so a caller from another organization never learns the notification exists.
-     */
     @Test
     void markingANotificationFromAnotherOrganizationIsAlsoNotFoundRatherThanForbidden() throws Exception {
         mockMvc.perform(patch("/api/v1/notifications/{id}/read", notificationOfB)
@@ -125,7 +102,6 @@ class NotificationApiOwnershipIntegrationTest {
         assertThat(notificationRepository.findById(notificationOfB).orElseThrow().isRead()).isFalse();
     }
 
-    /** Requirement 28.5: the same endpoint that refuses a foreign row accepts the caller's own. */
     @Test
     void markingOwnNotificationReadSucceedsAndTheFollowUpListShowsIt() throws Exception {
         mockMvc.perform(patch("/api/v1/notifications/{id}/read", notificationOfA).with(as(emailOfA)))
@@ -138,7 +114,6 @@ class NotificationApiOwnershipIntegrationTest {
                 .andExpect(jsonPath("$.data.content[0].read").value(true));
     }
 
-    /** Requirement 28.3: the list is addressed to the caller, with no parameter able to widen it. */
     @Test
     void listReturnsOnlyTheCallersOwnNotifications() throws Exception {
         mockMvc.perform(get("/api/v1/notifications").with(as(emailOfA)))
@@ -149,12 +124,6 @@ class NotificationApiOwnershipIntegrationTest {
                         .value(Matchers.not(Matchers.hasItem(notificationOfB.toString()))));
     }
 
-    /**
-     * Requirement 28.9 across commit boundaries. The first call commits before the second starts - the
-     * read in between proves it, because it runs in a transaction of its own - so the second insert
-     * meets an already-committed row rather than one its own transaction wrote. Exactly one row
-     * survives, and every column the second call supplied a value for is still the first call's.
-     */
     @Test
     void createOnceDeduplicatesAcrossSeparatelyCommittedTransactions() {
         UUID recipientId = userIdOf(emailOfB);
@@ -176,12 +145,6 @@ class NotificationApiOwnershipIntegrationTest {
         assertThat(deduped.getCreatedAt()).isEqualTo(asFirstCommitted.getCreatedAt());
     }
 
-    /**
-     * Requirement 28.7 read as a boundary rather than a bulk update: the one statement behind
-     * mark-all-read is keyed on the caller, so a second recipient's unread notifications survive it.
-     * Requirement 28.8 is asserted on the same rows, since an unread count that leaked across users
-     * would be the same defect seen from the read side.
-     */
     @Test
     void markAllReadAndUnreadCountNeverReachAnotherUsersNotifications() throws Exception {
         UUID idOfA = userIdOf(emailOfA);

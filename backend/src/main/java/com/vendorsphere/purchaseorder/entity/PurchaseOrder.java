@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/** One purchase order (Requirement 18). Mapped to the V1 table plus the V2 columns. */
 @Entity
 @Table(name = "purchase_orders")
 public class PurchaseOrder extends BaseEntity {

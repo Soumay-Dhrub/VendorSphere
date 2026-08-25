@@ -33,23 +33,13 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Purchase order generation and lifecycle (Requirements 18, 19).
- *
- * <p>Generation mirrors the selected quotation without retyping: one order per RFQ, guarded by the
- * selection record (Requirement 18.5) and by the absence of an existing order, whose number the 409
- * names (Requirement 18.6). The lifecycle machine owns every transition pair of Requirement 19.1.
- */
 @Service
 public class PurchaseOrderService {
 
-    /** Pinned by Requirement 18.5. */
     static final String NO_SELECTION_MESSAGE = "RFQ has no selected quotation";
 
-    /** Pinned by Requirement 19.7. */
     static final String CANCELLATION_REASON_MESSAGE = "Cancellation reason is required";
 
-    /** Pinned by Requirement 19.6. */
     static final String DELIVERIES_EXIST_MESSAGE =
             "Purchase order with recorded deliveries cannot be cancelled";
 
@@ -102,11 +92,6 @@ public class PurchaseOrderService {
         this.clock = clock;
     }
 
-    /**
-     * Generates a DRAFT purchase order from the RFQ's vendor selection (Requirement 18): items copy
-     * the quotation lines with delivered quantities at zero; header figures copy the quotation;
-     * expected delivery is today plus the quotation's delivery period (Requirement 18.4).
-     */
     @Transactional
     public com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse generate(UUID rfqId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -162,10 +147,6 @@ public class PurchaseOrderService {
         return toDetailResponse(saved);
     }
 
-    /**
-     * Issues a DRAFT order: records issuer and instant and notifies the vendor's users
-     * (Requirement 19.3).
-     */
     @Transactional
     public com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse issue(UUID poId) {
         var po = findInternal(poId);
@@ -184,11 +165,6 @@ public class PurchaseOrderService {
         return toDetailResponse(saved);
     }
 
-    /**
-     * Acknowledges an issued order as the linked vendor user. A foreign identifier is answered 404
-     * {@code Purchase order not found} so another vendor's orders stay unenumerable
-     * (Requirement 19.5).
-     */
     @Transactional
     public com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse acknowledge(UUID poId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -203,7 +179,6 @@ public class PurchaseOrderService {
         return toDetailResponse(poRepository.save(po));
     }
 
-    /** Closes a fully delivered order (Requirement 19.8); analytics recalculate afterwards. */
     @Transactional
     public com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse close(UUID poId) {
         var po = findInternal(poId);
@@ -220,7 +195,6 @@ public class PurchaseOrderService {
         return toDetailResponse(saved);
     }
 
-    /** Cancels a not-yet-delivered order with a mandatory reason (Requirements 19.6, 19.7). */
     @Transactional
     public com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse cancel(
             UUID poId, com.vendorsphere.purchaseorder.dto.PurchaseOrderCancelRequest request) {
@@ -245,7 +219,6 @@ public class PurchaseOrderService {
         return toDetailResponse(saved);
     }
 
-    /** DRAFT-only header edit (Requirement 18.7). */
     @Transactional
     public com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse update(
             UUID poId, com.vendorsphere.purchaseorder.dto.PurchaseOrderUpdateRequest request) {
@@ -272,11 +245,6 @@ public class PurchaseOrderService {
                 new BusinessException(NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND)));
     }
 
-    /**
-     * Lists the caller's visible orders. A vendor user sees only its own orders and never a DRAFT -
-     * the unissued commitment is internal (Requirement 19.10). Internal users see everything in the
-     * tenant, drafts included.
-     */
     @Transactional(readOnly = true)
     public List<com.vendorsphere.purchaseorder.dto.PurchaseOrderResponse> list() {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();

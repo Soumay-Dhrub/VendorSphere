@@ -11,14 +11,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-/**
- * One line of an RFQ, copied from a purchase request item at creation (Requirement 9.3).
- *
- * <p>{@code rfq_items} carries {@code created_at} only, so this entity extends
- * {@link CreatedOnlyEntity}. {@code sourceItemId} maps {@code purchase_request_item_id}, retaining
- * the link back to the line the requirement asked for; it is a plain column because the item is
- * never navigated as an association, and the PR module owns that table.
- */
 @Entity
 @Table(name = "rfq_items")
 public class RfqItem extends CreatedOnlyEntity {

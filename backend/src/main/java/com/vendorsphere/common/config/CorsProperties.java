@@ -3,24 +3,9 @@ package com.vendorsphere.common.config;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Browser origins allowed to call the API.
- *
- * <p>Bound from {@code vendorsphere.cors} in {@code application.yml}, which sources the value from
- * the {@code CORS_ALLOWED_ORIGINS} environment variable so a deployment can point the API at a
- * frontend served from any host or port. Entries are matched as patterns (see
- * {@code SecurityConfig#corsConfigurationSource()}), so {@code https://*.example.com} is a legal
- * value.
- *
- * <p>The default is the single local development origin. A bare {@code "*"} is rejected: the CORS
- * configuration sends {@code Access-Control-Allow-Credentials: true}, and a wildcard there would
- * let any site issue credentialed cross-origin requests against the API. Failing at startup is
- * preferable to silently serving a permissive policy.
- */
 @ConfigurationProperties(prefix = "vendorsphere.cors")
 public record CorsProperties(List<String> allowedOrigins) {
 
-    /** Used when the property is absent or blank, matching the documented local setup. */
     public static final List<String> DEFAULT_ALLOWED_ORIGINS = List.of("http://localhost:3000");
 
     public CorsProperties {

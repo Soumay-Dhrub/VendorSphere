@@ -1,7 +1,6 @@
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
-/** Paired with a visible `Label` like `Input` (Requirement 35.14). */
 export function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
     <textarea

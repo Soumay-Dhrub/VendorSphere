@@ -12,17 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Exercises the real {@code UPDATE ... RETURNING} allocation against PostgreSQL, because the upsert
- * and the returned value are database behaviour that a mock cannot demonstrate.
- *
- * <p>The generator is built by hand with a fixed clock so the year segment is deterministic; the
- * repository under it is the container-backed Spring bean.
- *
- * <p>Every test is transactional, so the counters it allocates roll back and the shared database
- * carries none of them into another class. Each test also allocates against a newly created
- * organization, so the expected {@code 001} start does not depend on the database being empty.
- */
 class DefaultReferenceNumberGeneratorIntegrationTest extends AbstractIntegrationTest {
 
     private static final Clock CLOCK_2026 =

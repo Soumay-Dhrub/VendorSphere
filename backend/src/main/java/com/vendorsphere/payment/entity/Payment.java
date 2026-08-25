@@ -13,7 +13,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** One payment recorded against an invoice (Requirement 25). */
 @Entity
 @Table(name = "payments")
 public class Payment extends CreatedOnlyEntity {

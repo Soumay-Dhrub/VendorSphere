@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Match finding reads; re-evaluation deletes and recreates the invoice's findings. */
 public interface MatchFindingRepository extends JpaRepository<MatchFinding, UUID> {
 
     List<MatchFinding> findByInvoiceIdOrderByCreatedAtAscIdAsc(UUID invoiceId);

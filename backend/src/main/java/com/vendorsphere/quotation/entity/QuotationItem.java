@@ -11,13 +11,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
-/**
- * One priced line of a quotation, answering one RFQ item (Requirement 12.4).
- *
- * <p>{@code rfq_item_id} retains the link to the line being priced. {@code taxAmount} and
- * {@code lineTotal} are computed by the platform (Requirement 13) - a request payload cannot supply
- * them because the request records do not carry those components at all.
- */
 @Entity
 @Table(name = "quotation_items")
 public class QuotationItem extends CreatedOnlyEntity {
@@ -39,7 +32,6 @@ public class QuotationItem extends CreatedOnlyEntity {
     @Column(name = "unit_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal unitPrice;
 
-    /** Percent, 0.00 to 100.00 inclusive (Requirement 12.5). */
     @Column(name = "tax_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal taxRate = BigDecimal.ZERO.setScale(2);
 

@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-/** Per-line ordered/received/damaged/rejected/outstanding figures (Requirement 20.9). */
 public record DeliveryProgressResponse(
         UUID purchaseOrderId,
         List<ItemProgress> items

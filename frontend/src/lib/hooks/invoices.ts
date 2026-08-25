@@ -1,12 +1,5 @@
 "use client";
 
-/**
- * Query and mutation hooks for invoices, three-way match findings and review.
- *
- * Submission runs the matcher server-side and stores its findings, so the match
- * cache is invalidated alongside the invoice itself (Requirements 23.1, 23.6).
- */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getInvoice,
@@ -70,7 +63,6 @@ export function useSubmitInvoice(purchaseOrderId: Uuid) {
   });
 }
 
-/** Overriding clears the approval gate on that finding (Requirement 24.5). */
 export function useOverrideMatchFinding(invoiceId: Uuid) {
   const queryClient = useQueryClient();
   return useMutation({

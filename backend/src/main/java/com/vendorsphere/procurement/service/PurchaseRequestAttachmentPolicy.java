@@ -11,16 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-/**
- * Opens {@code PURCHASE_REQUEST} attachments to the same audience the request reads serve
- * (Requirement 33.6).
- *
- * <p>Without a policy, tenant scoping would be the only gate on a requester's supporting files.
- * Requirement 30.6 narrows that: a REQUESTER-only account reads only its own requests, so it
- * downloads its own attachments and no others. The check loads the owning request tenant-scoped and
- * delegates to {@link PurchaseRequestAccess} - the same rule every request read applies - so a denial
- * is indistinguishable from an unknown attachment.
- */
 @Component
 public class PurchaseRequestAttachmentPolicy implements AttachmentOwnerAccessPolicy {
 

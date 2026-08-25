@@ -27,12 +27,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-/**
- * Unit tests for what a recorded audit row carries (Requirement 29.1).
- *
- * <p>Collaborators are JDK proxies rather than Mockito mocks, matching the approach the attachment
- * tests already take so the suite runs without bytecode instrumentation.
- */
 class AuditServiceImplTest {
 
     private static final UUID ORGANIZATION_ID = UUID.randomUUID();

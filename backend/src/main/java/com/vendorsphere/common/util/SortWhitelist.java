@@ -6,17 +6,8 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * Immutable set of sortable field names for one list endpoint, together with the field
- * applied when a request omits {@code sort}.
- *
- * <p>Each controller declares its own whitelist so that {@link PageSupport#pageable} can
- * reject an unknown {@code sort} value with a message naming the accepted fields
- * (Requirement 31.5).
- */
 public final class SortWhitelist {
 
-    /** Sortable fields in declaration order, so error messages read predictably. */
     private final Set<String> fields;
 
     private final String defaultField;
@@ -26,12 +17,6 @@ public final class SortWhitelist {
         this.defaultField = defaultField;
     }
 
-    /**
-     * Creates a whitelist whose first field is also the default sort field.
-     *
-     * @param defaultField the field applied when a request omits {@code sort}
-     * @param otherFields  the remaining sortable fields
-     */
     public static SortWhitelist of(String defaultField, String... otherFields) {
         Objects.requireNonNull(defaultField, "defaultField");
         Set<String> all = new LinkedHashSet<>();
@@ -42,12 +27,6 @@ public final class SortWhitelist {
         return new SortWhitelist(all, defaultField);
     }
 
-    /**
-     * Creates a whitelist from an explicit collection of fields.
-     *
-     * @param fields       the sortable fields, which must contain {@code defaultField}
-     * @param defaultField the field applied when a request omits {@code sort}
-     */
     public static SortWhitelist of(Collection<String> fields, String defaultField) {
         Objects.requireNonNull(fields, "fields");
         Objects.requireNonNull(defaultField, "defaultField");
@@ -58,22 +37,18 @@ public final class SortWhitelist {
         return new SortWhitelist(all, defaultField);
     }
 
-    /** The field applied when a request omits {@code sort}. */
     public String defaultField() {
         return defaultField;
     }
 
-    /** The sortable fields in declaration order. */
     public Set<String> fields() {
         return fields;
     }
 
-    /** Whether {@code field} may be used as a sort field. */
     public boolean permits(String field) {
         return field != null && fields.contains(field);
     }
 
-    /** The sortable fields rendered for an error message, in declaration order. */
     public String describe() {
         return String.join(", ", fields);
     }

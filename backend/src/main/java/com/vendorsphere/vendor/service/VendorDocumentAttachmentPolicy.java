@@ -6,15 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-/**
- * Opens {@code VENDOR_DOCUMENT} attachments to the same audience the vendor document listing serves.
- *
- * <p>Without a policy the attachment module falls back to tenant scoping alone, which would let any
- * internal user download any vendor's compliance file. Requirement 30.8 is narrower than that for
- * vendor users - linked documents only - so this policy delegates the question to
- * {@link VendorAccessGuard#assertVendorVisible} with the document list's own not-found wording, and a
- * denial is indistinguishable from an unknown attachment.
- */
 @Component
 public class VendorDocumentAttachmentPolicy implements AttachmentOwnerAccessPolicy {
 

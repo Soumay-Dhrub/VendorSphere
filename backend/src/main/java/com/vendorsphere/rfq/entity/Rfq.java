@@ -17,17 +17,6 @@ import jakarta.persistence.Version;
 
 import java.time.Instant;
 
-/**
- * A Request for Quotation issued by one organization (Requirement 9.1).
- *
- * <p>{@code rfqs} carries {@code created_at} and {@code updated_at}, so this entity extends
- * {@link BaseEntity}; {@code version} maps the optimistic-lock column added by V2 (Requirement 32.3).
- *
- * <p>{@code purchaseRequest} is nullable in V1 but always set by {@code RfqService}, which creates
- * every RFQ from a source request and retains the link for the derived-RFQ read of Requirement 8.9.
- * Items and invitations are deliberately not mapped as collections - they are read through their own
- * repositories batched per page, as everywhere else on the platform.
- */
 @Entity
 @Table(name = "rfqs")
 public class Rfq extends BaseEntity {
@@ -72,7 +61,6 @@ public class Rfq extends BaseEntity {
     @Column(nullable = false, length = 30)
     private RfqStatus status = RfqStatus.DRAFT;
 
-    /** Why the RFQ was cancelled; set only on cancellation (Requirement 11.7). */
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
 

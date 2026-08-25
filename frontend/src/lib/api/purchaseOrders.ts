@@ -1,10 +1,3 @@
-/**
- * Purchase order generation and lifecycle endpoints.
- *
- * Generation is driven from the awarded RFQ (`POST /rfqs/{id}/purchase-order`);
- * everything else hangs off `/purchase-orders`. Vendor users receive only their
- * own non-DRAFT orders, filtered server-side (Requirement 19.10).
- */
 
 import { apiGet, apiGetPage, apiPost, apiPut } from "./client";
 import type {
@@ -65,7 +58,6 @@ export type PurchaseOrderListParams = PageParams & {
   deliveryOverdue?: boolean;
 };
 
-/** Editable while DRAFT only (Requirement 18.7). */
 export type PurchaseOrderUpdateRequest = {
   deliveryAddress?: string | null;
   expectedDelivery?: IsoDate | null;
@@ -73,7 +65,6 @@ export type PurchaseOrderUpdateRequest = {
   termsAndConditions?: string | null;
 };
 
-/** A reason is required (Requirement 19.7). */
 export type PurchaseOrderCancellationRequest = {
   reason: string;
 };

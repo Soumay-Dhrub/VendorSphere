@@ -1,11 +1,3 @@
-/**
- * Purchase request authoring, item management, submission and review endpoints
- * (`/purchase-requests`).
- *
- * Item and attachment mutations are only accepted while the request is DRAFT
- * (Requirements 7.3, 7.6, 8.3); the client surfaces the server rejection rather
- * than duplicating the rule.
- */
 
 import {
   apiDelete,
@@ -34,7 +26,7 @@ export type PurchaseRequestRequest = {
   departmentId: Uuid;
   justification?: string | null;
   requiredDate: IsoDate;
-  /** Absent priority is stored as MEDIUM (Requirement 7.2). */
+
   priority?: Priority;
   estimatedBudget?: Money | null;
 };
@@ -61,7 +53,6 @@ export type PurchaseRequestItemResponse = {
   createdAt: IsoInstant;
 };
 
-/** RFQ derived from a purchase request, surfaced on the detail screen (Req 8.9). */
 export type PurchaseRequestRfqRef = {
   rfqId: Uuid;
   rfqNumber: string;
@@ -102,7 +93,6 @@ export type PurchaseRequestApprovalRequest = {
   comments?: string;
 };
 
-/** A reason is required (Requirement 8.6). */
 export type PurchaseRequestRejectionRequest = {
   reason: string;
 };

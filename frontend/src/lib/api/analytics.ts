@@ -1,14 +1,7 @@
-/**
- * Dashboard summary and analytics report endpoints (`/analytics/...`).
- *
- * Every figure is aggregated server-side at money scale (Requirement 27); the
- * reports return ordered arrays rather than pages.
- */
 
 import { apiGet } from "./client";
 import type { Decimal, IsoDate, Money, Uuid } from "./types";
 
-/** The seven dashboard figures of Requirement 27.1. */
 export type DashboardSummaryResponse = {
   totalSpend: Money;
   activeRfqCount: number;
@@ -25,7 +18,7 @@ export type MonthlySpendParams = {
 };
 
 export type MonthlySpendEntry = {
-  /** Calendar month as `YYYY-MM`. */
+
   month: string;
   amount: Money;
 };
@@ -36,7 +29,6 @@ export type SpendByDepartmentEntry = {
   amount: Money;
 };
 
-/** Ordered by amount descending (Requirement 27.9). */
 export type SpendByVendorEntry = {
   vendorId: Uuid;
   vendorCompanyName: string;
@@ -58,7 +50,6 @@ export type VendorPerformanceReportEntry = {
   performanceScore: Decimal;
 };
 
-/** Mean cycle time in days over closed purchase orders, one decimal place. */
 export type CycleTimeResponse = {
   averageCycleTimeDays: Decimal;
   closedPurchaseOrderCount: number;

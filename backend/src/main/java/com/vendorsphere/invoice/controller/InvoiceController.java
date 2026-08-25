@@ -15,10 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Invoice endpoints (Requirements 22 through 24). Review verbs are FINANCE/ADMIN only, so a VENDOR
- * request is answered 403 at the boundary (Requirement 24.11).
- */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Invoices")

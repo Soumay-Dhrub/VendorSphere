@@ -1,12 +1,3 @@
-/**
- * Quotation submission and revision, comparison, evaluation, selection and
- * criteria weight endpoints.
- *
- * Request types deliberately omit every computed figure — tax amount, line
- * total, subtotal, total amount — because the server derives them from the
- * primitives and discards anything else (Requirement 13.6). Response types
- * expose those figures as read-only pre-scaled values.
- */
 
 import { apiGet, apiGetPage, apiPost, apiPostForm, apiPut, fileForm } from "./client";
 import type {
@@ -27,7 +18,7 @@ export type QuotationItemRequest = {
   rfqItemId: Uuid;
   quantity: Quantity;
   unitPrice: Money;
-  /** 0.00 to 100.00 (Requirement 12.5). */
+
   taxRate: Decimal;
   discountAmount?: Money;
 };
@@ -39,7 +30,7 @@ export type QuotationRequest = {
   paymentTerms?: string | null;
   warranty?: string | null;
   warrantyMonths?: number | null;
-  /** On or after the RFQ closing date (Requirement 12.6). */
+
   validityDate: IsoDate;
   notes?: string | null;
 };
@@ -95,7 +86,6 @@ export type ComparisonItemResponse = {
   lineTotal: Money;
 };
 
-/** One column of the comparison screen (Requirements 15.2, 15.3). */
 export type ComparisonRowResponse = {
   quotationId: Uuid;
   vendorId: Uuid;
@@ -129,7 +119,6 @@ export type ComparisonRfqSummary = {
   itemNames: string[];
 };
 
-/** Rows are already ordered by score descending, total ascending (Req 15.6). */
 export type ComparisonResponse = {
   rfq: ComparisonRfqSummary;
   rows: ComparisonRowResponse[];
@@ -151,7 +140,6 @@ export type QuotationCommentRequest = {
   comment: string;
 };
 
-/** Justification is mandatory (Requirement 17.3). */
 export type VendorSelectionRequest = {
   quotationId: Uuid;
   justification: string;
@@ -169,7 +157,6 @@ export type VendorSelectionResponse = {
   selectedAt: IsoInstant;
 };
 
-/** The four weights must sum to 1.00 (Requirement 16.11). */
 export type CriteriaWeightsRequest = {
   price: Decimal;
   delivery: Decimal;

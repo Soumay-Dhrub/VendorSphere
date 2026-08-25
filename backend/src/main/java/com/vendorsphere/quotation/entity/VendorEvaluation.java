@@ -15,13 +15,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * One scored row of an RFQ evaluation: the four component scores, the weighted total and the
- * recommended flag (Requirement 16.13). Unique per (rfq, quotation), so a re-evaluation updates this
- * row instead of stacking history.
- *
- * <p>{@code comments} carries the procurement comments of Requirement 17.6.
- */
 @Entity
 @Table(name = "vendor_evaluations")
 public class VendorEvaluation extends CreatedOnlyEntity {

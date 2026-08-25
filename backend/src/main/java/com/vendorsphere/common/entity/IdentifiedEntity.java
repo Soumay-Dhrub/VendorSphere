@@ -8,10 +8,6 @@ import jakarta.persistence.MappedSuperclass;
 
 import java.util.UUID;
 
-/**
- * Mapped superclass for tables that carry no timestamp columns of their own beyond the identifier -
- * currently {@code rfq_vendors}, whose {@code invited_at} plays the creation-timestamp role.
- */
 @MappedSuperclass
 public abstract class IdentifiedEntity {
 

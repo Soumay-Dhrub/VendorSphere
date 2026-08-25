@@ -1,10 +1,3 @@
-/**
- * RFQ creation, item management, vendor invitation and lifecycle endpoints
- * (`/rfqs`).
- *
- * Vendor users see only RFQs their linked vendor is invited to, filtered
- * server-side (Requirement 10.7), so the same list call serves both audiences.
- */
 
 import {
   apiDelete,
@@ -31,7 +24,7 @@ export type RfqRequest = {
   title: string;
   description?: string | null;
   openingDate: IsoInstant;
-  /** Must be after the opening date (Requirement 9.6). */
+
   closingDate: IsoInstant;
   currency?: string | null;
   deliveryLocation?: string | null;
@@ -89,7 +82,7 @@ export type RfqResponse = {
   items: RfqItemResponse[];
   invitedVendors: RfqVendorResponse[];
   documents: AttachmentResponse[];
-  /** Visible while the RFQ is OPEN, without prices (Requirement 14.5). */
+
   submittedQuotationCount: number;
   createdAt: IsoInstant;
   updatedAt: IsoInstant;
@@ -101,12 +94,10 @@ export type RfqListParams = PageParams & {
   vendorId?: Uuid;
 };
 
-/** All-or-nothing invitation of active vendors (Requirements 10.1–10.3). */
 export type RfqVendorInviteRequest = {
   vendorIds: Uuid[];
 };
 
-/** A reason is required (Requirement 11.6). */
 export type RfqCancellationRequest = {
   reason: string;
 };

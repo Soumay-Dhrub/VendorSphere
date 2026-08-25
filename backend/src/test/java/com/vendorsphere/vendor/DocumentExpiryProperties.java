@@ -12,35 +12,15 @@ import net.jqwik.api.Provide;
 import net.jqwik.api.Tuple;
 import net.jqwik.api.statistics.Statistics;
 
-/**
- * Property-based check for {@link DocumentExpiryEvaluator}, the classification every vendor document
- * listing, the expiring-document count and the daily expiry job read their state from.
- *
- * <p>The expected state is derived from the requirement text alone — three predicates spelled out
- * independently of the evaluator — and the property asserts exactly one of them holds and that the
- * returned state is the one that did. That is what makes the classification <em>total</em> (some
- * predicate always holds) and <em>exclusive</em> (never more than one).
- *
- * <p>The predicates are expressed over epoch days rather than {@code today.plusDays(30)} so that
- * {@link LocalDate#MIN} and {@link LocalDate#MAX} are legal inputs: the generators deliberately
- * reach both ends of the supported date range, where naive date arithmetic would overflow.
- *
- * <p>A uniformly random pair of dates would land inside the 30-day window essentially never, so the
- * generator mostly produces an expiry date offset from {@code today} by ±40 days. The coverage check
- * keeps the property honest — it fails if any of the three states stops being exercised.
- */
 class DocumentExpiryProperties {
 
-    /** Inclusive window length from Requirement 5.4, stated here rather than read from the evaluator. */
     private static final int WINDOW_DAYS = 30;
 
-    /** Offset range around {@code today}, wide enough to straddle both window boundaries. */
     private static final int NEAR_BOUNDARY_DAYS = 40;
 
     private static final long MIN_EPOCH_DAY = LocalDate.MIN.toEpochDay();
     private static final long MAX_EPOCH_DAY = LocalDate.MAX.toEpochDay();
 
-    /** An evaluation date, which is never absent, and an expiry date, which may be. */
     record Inputs(LocalDate expiryDate, LocalDate today) {}
 
     // Feature: procurement-lifecycle, Property 14: Document expiry classification is total and
@@ -83,7 +63,6 @@ class DocumentExpiryProperties {
                 .isEqualTo(expected);
     }
 
-    /** Base pairs, with the expiry date absent one time in ten. */
     @Provide
     Arbitrary<Inputs> inputs() {
         return Combinators.combine(
@@ -99,11 +78,6 @@ class DocumentExpiryProperties {
                 Tuple.of(10, extremePairs()));
     }
 
-    /**
-     * Expiry dates offset from {@code today} by ±40 days, so EXPIRED, EXPIRING_SOON and VALID all
-     * occur often and both window boundaries are hit. {@code today} is kept clear of the ends of the
-     * range by the offset width so the shifted date stays representable.
-     */
     private Arbitrary<Inputs> nearBoundaryPairs() {
         Arbitrary<LocalDate> todays = epochDays(
                         MIN_EPOCH_DAY + NEAR_BOUNDARY_DAYS, MAX_EPOCH_DAY - NEAR_BOUNDARY_DAYS)
@@ -114,13 +88,11 @@ class DocumentExpiryProperties {
                 .as((today, offset) -> new Inputs(today.plusDays(offset), today));
     }
 
-    /** Independent dates spanning the whole supported range, which mostly land far from the window. */
     private Arbitrary<Inputs> unrelatedPairs() {
         Arbitrary<LocalDate> anyDate = epochDays(MIN_EPOCH_DAY, MAX_EPOCH_DAY).map(LocalDate::ofEpochDay);
         return Combinators.combine(anyDate, anyDate).as(Inputs::new);
     }
 
-    /** Both ends of the range and the dates one step inside each window boundary from them. */
     private Arbitrary<Inputs> extremePairs() {
         Arbitrary<LocalDate> edges = Arbitraries.of(
                 LocalDate.MIN,
@@ -135,7 +107,6 @@ class DocumentExpiryProperties {
         return Combinators.combine(edges, edges).as(Inputs::new);
     }
 
-    /** Epoch days constrained to a range {@link LocalDate#ofEpochDay} accepts. */
     private Arbitrary<Long> epochDays(long minEpochDay, long maxEpochDay) {
         return Arbitraries.longs().between(minEpochDay, maxEpochDay);
     }

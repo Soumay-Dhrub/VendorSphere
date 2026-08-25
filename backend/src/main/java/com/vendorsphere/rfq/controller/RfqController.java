@@ -38,13 +38,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * RFQ endpoints (Requirements 9, 10, 11, 30; API surface).
- *
- * <p>Internal procurement roles drive the whole lifecycle; cancellation is manager work
- * (Requirement 11.7). The vendor-facing reads under {@code /rfqs/vendor} resolve the linked vendor
- * through {@code VendorAccessGuard} and answer a foreign identifier as 404.
- */
 @RestController
 @RequestMapping("/api/v1/rfqs")
 @Tag(name = "RFQs")
@@ -131,7 +124,6 @@ public class RfqController {
         return ApiResponse.ok(rfqService.removeItem(id, itemId));
     }
 
-    /** Requirement 9.7: specification and terms documents on a DRAFT RFQ. */
     @PostMapping(value = "/{id}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'PROCUREMENT_MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)

@@ -15,7 +15,6 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
-/** One three-way match exception on an invoice (Requirement 23), overridable with justification. */
 @Entity
 @Table(name = "invoice_match_findings")
 public class MatchFinding extends CreatedOnlyEntity {
@@ -35,7 +34,6 @@ public class MatchFinding extends CreatedOnlyEntity {
     @Column(name = "item_name")
     private String itemName;
 
-    /** The expected value as text: ordered quantity, PO unit price or prior invoice number. */
     @Column(name = "expected_value")
     private String expectedValue;
 

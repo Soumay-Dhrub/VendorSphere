@@ -1,14 +1,5 @@
 "use client";
 
-/**
- * Query and mutation hooks for delivery recording and delivery progress.
- *
- * Recording a delivery is the widest-reaching mutation of the lifecycle: it
- * recomputes delivered quantities and purchase order status, re-evaluates the
- * three-way match of any open invoice on the order, and recalculates vendor
- * performance (Requirements 20.9, 23.10, 26.9). The invalidations mirror that.
- */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getDelivery,

@@ -1,20 +1,6 @@
-/**
- * Shared wire types for the VendorSphere API.
- *
- * The backend wraps every response in `ApiResponse` (see
- * `common/dto/ApiResponse.java`) and every paged list in `PageResponse`
- * (`common/dto/PageResponse.java`). The types below mirror those records field
- * for field so the client never guesses at the envelope shape.
- *
- * Money and quantity values arrive already scaled by the server (Requirement
- * 32.7) either as JSON numbers or plain strings, so they are typed as
- * `string | number` and rendered through `formatMoney` from `src/lib/format.ts`.
- * The client never recomputes a monetary figure.
- */
 
 export type { ApiResponse } from "@/lib/api";
 
-/** Paged envelope carried inside `ApiResponse.data` on every list endpoint. */
 export type PageResponse<T> = {
   content: T[];
   page: number;
@@ -25,7 +11,6 @@ export type PageResponse<T> = {
   last: boolean;
 };
 
-/** Query parameters accepted by every list endpoint (Requirement 31.2). */
 export type PageParams = {
   page?: number;
   size?: number;
@@ -35,19 +20,14 @@ export type PageParams = {
 
 export type SortDirection = "asc" | "desc";
 
-/** Pre-scaled monetary value: two decimals, produced server-side. */
 export type Money = string | number;
 
-/** Pre-scaled quantity value: three decimals, produced server-side. */
 export type Quantity = string | number;
 
-/** Score, rate, weight and rating values, all pre-scaled server-side. */
 export type Decimal = string | number;
 
-/** ISO-8601 instant, e.g. `2026-02-14T09:31:07.412Z`. */
 export type IsoInstant = string;
 
-/** ISO-8601 local date, e.g. `2026-02-14`. */
 export type IsoDate = string;
 
 export type Uuid = string;
@@ -132,7 +112,6 @@ export type MatchStatus =
   | "MISSING_DELIVERY"
   | "DUPLICATE_INVOICE";
 
-/** Declaration order is the precedence order of Requirement 23.7. */
 export type MatchFindingType =
   | "DUPLICATE_INVOICE"
   | "MISSING_DELIVERY"
@@ -151,7 +130,6 @@ export type AttachmentOwnerType =
   | "DELIVERY_PROOF"
   | "INVOICE";
 
-/** Metadata of a stored attachment; the file itself is fetched by identifier. */
 export type AttachmentResponse = {
   id: Uuid;
   ownerType: AttachmentOwnerType;

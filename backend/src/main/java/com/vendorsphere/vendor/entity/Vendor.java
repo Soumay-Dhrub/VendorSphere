@@ -17,20 +17,6 @@ import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * A supplier registered by one organization (Requirement 2.1).
- *
- * <p>{@code vendors} carries both {@code created_at} and {@code updated_at}, so this entity extends
- * {@link BaseEntity}. {@code version} maps the optimistic-lock column added by V2: a concurrent edit
- * raises {@code ObjectOptimisticLockingFailureException}, which the global exception handler maps to
- * 409 (Requirement 32.3).
- *
- * <p>{@code user} maps {@code vendors.user_id}, the portal account linked to this vendor. It is the
- * column the vendor-scoped access guard and the notification module resolve vendor users through.
- *
- * <p>Collections of contacts and documents are deliberately not mapped here: list endpoints read
- * them through their own repositories, so a vendor page never fans out one query per row.
- */
 @Entity
 @Table(name = "vendors")
 public class Vendor extends BaseEntity {
@@ -71,7 +57,6 @@ public class Vendor extends BaseEntity {
     @Column(precision = 3, scale = 2)
     private BigDecimal rating = BigDecimal.ZERO.setScale(2);
 
-    /** Portal user account linked to this vendor, or {@code null} for a vendor without portal access. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;

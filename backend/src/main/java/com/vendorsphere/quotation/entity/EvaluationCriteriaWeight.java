@@ -12,11 +12,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
-/**
- * The configurable evaluation weights of one organization (Requirement 16.10), one row per
- * organization by the V2 UNIQUE constraint. {@link com.vendorsphere.quotation.EvaluationEngine.Weights#DEFAULT}
- * applies while the row is absent (Requirement 16.9).
- */
 @Entity
 @Table(name = "evaluation_criteria_weights")
 public class EvaluationCriteriaWeight extends BaseEntity {

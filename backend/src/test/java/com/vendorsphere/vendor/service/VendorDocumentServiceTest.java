@@ -51,11 +51,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/**
- * The type allowlist of Requirement 5.2 with its 400 wording of Requirement 5.3, the metadata an
- * upload persists (Requirement 5.1), the derived expiry state of Requirement 5.4 and the daily
- * notification fan-out of Requirement 5.5.
- */
 class VendorDocumentServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-14T09:15:30Z");
@@ -101,7 +96,6 @@ class VendorDocumentServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirement 5.1: metadata stored against the vendor with the upload timestamp recorded. */
     @Test
     void anUploadStoresTheMetadataAgainstTheVendor() {
         Vendor vendor = storedVendor();
@@ -129,7 +123,6 @@ class VendorDocumentServiceTest {
         assertThat(stored.getValue().getVendor()).isSameAs(vendor);
     }
 
-    /** A date inside the inclusive 30-day window reads as EXPIRING_SOON on the upload response. */
     @Test
     void anUploadInsideTheWindowReadsAsExpiringSoon() {
         Vendor vendor = storedVendor();
@@ -143,10 +136,6 @@ class VendorDocumentServiceTest {
         assertThat(result.expiryState()).isEqualTo(DocumentExpiryState.EXPIRING_SOON);
     }
 
-    /**
-     * Requirements 5.2 and 5.3: every declared type parses, and an absent or unknown value - in any
-     * case - is rejected with 400 naming all six accepted types before anything else runs.
-     */
     @ParameterizedTest
     @ValueSource(strings = {
             "GST_CERTIFICATE", "REGISTRATION_CERTIFICATE", "TAX_DOCUMENT",
@@ -164,7 +153,6 @@ class VendorDocumentServiceTest {
                 .isEqualTo(VendorDocumentType.valueOf(rawType));
     }
 
-    /** Type matching is case-insensitive, so a client writing lower case is not punished. */
     @Test
     void aMixedCaseTypeIsAccepted() {
         Vendor vendor = storedVendor();
@@ -197,7 +185,6 @@ class VendorDocumentServiceTest {
         verify(vendorDocumentRepository, never()).save(any());
     }
 
-    /** Requirement 2.6: another tenant's vendor is not found, and no byte is written. */
     @Test
     void uploadingForAVendorOfAnotherOrganizationIsNotFound() {
         UUID foreignVendorId = UUID.randomUUID();
@@ -214,7 +201,6 @@ class VendorDocumentServiceTest {
         verifyNoInteractions(attachmentService);
     }
 
-    /** Requirement 30.8: a linked vendor user reaches only its own documents; denial is 404. */
     @Test
     void aVendorUserDeniedTheVendorFailsClosed() {
         Vendor vendor = storedVendor();
@@ -230,7 +216,6 @@ class VendorDocumentServiceTest {
         verifyNoInteractions(vendorDocumentRepository);
     }
 
-    /** Requirement 5.4: the listing derives each state against the request date. */
     @Test
     void theListDerivesAnExpiryStatePerDocument() {
         Vendor vendor = storedVendor();
@@ -252,7 +237,6 @@ class VendorDocumentServiceTest {
                         DocumentExpiryState.VALID);
     }
 
-    /** Requirement 2.6: the listing of an unknown or foreign vendor is not found. */
     @Test
     void listingDocumentsOfAVendorOfAnotherOrganizationIsNotFound() {
         UUID foreignVendorId = UUID.randomUUID();
@@ -264,11 +248,6 @@ class VendorDocumentServiceTest {
                 .hasMessage("Vendor not found");
     }
 
-    /**
-     * Requirement 5.5: exactly the evaluation date plus 30, 7 and 1 day is queried, and each expiring
-     * document notifies both the ADMIN and the PROCUREMENT_OFFICER audience of the owning
-     * organization.
-     */
     @Test
     void theDailyEvaluationQueriesExactlyThreeDatesAndNotifiesBothRoles() {
         VendorDocument expiring = document(storedVendor(), VendorDocumentType.GST_CERTIFICATE,
@@ -297,7 +276,6 @@ class VendorDocumentServiceTest {
                 eq("VendorDocument"), eq(expiring.getId()), any(), any());
     }
 
-    /** A day with no expiring document notifies nobody. */
     @Test
     void aQuietDayNotifiesNobody() {
         when(vendorDocumentRepository.findByExpiryDateIn(anySet())).thenReturn(List.of());

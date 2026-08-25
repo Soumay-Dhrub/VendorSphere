@@ -1,24 +1,9 @@
-/**
- * Money rendering helpers.
- *
- * The API sends every monetary field already scaled to two decimals (Requirement 32.7),
- * either as a JSON number or as a plain string. The frontend renders those values and
- * never recomputes them, so `formatMoney` only adjusts presentation: it pads or trims the
- * fractional part to exactly two digits. Scaling is done on the decimal digits themselves
- * (via BigInt cents) so no binary floating point error is introduced.
- */
 
 export type MoneyInput = string | number | null | undefined;
 
 const ZERO = "0.00";
 const DECIMAL_PATTERN = /^([+-]?)(\d*)(?:\.(\d*))?$/;
 
-/**
- * Renders a money value with exactly two decimal places.
- *
- * Total by construction: `null`, `undefined`, blank input and unparseable input all render
- * as `0.00`, matching the backend `Money.money(null)` convention.
- */
 export function formatMoney(value: MoneyInput): string {
   if (value === null || value === undefined) {
     return ZERO;

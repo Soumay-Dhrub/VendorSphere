@@ -51,10 +51,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * The RFQ rules of Requirements 9 and 11: creation from an approved request with item copying, the
- * date rule, the DRAFT-only edit gate, the open-without-vendor rejection and the cancellation rules.
- */
 class RfqServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-14T09:15:30Z");
@@ -120,7 +116,6 @@ class RfqServiceTest {
 
     // ----- creation (Requirements 9.1 through 9.4) -----
 
-    /** Requirement 9.2: a request outside APPROVED/PROCUREMENT_STARTED is 409 naming the status. */
     @Test
     void createFromAnUnapprovedRequestNamesTheStatusInA409() {
         storedSource(PurchaseRequestStatus.DRAFT);
@@ -134,7 +129,6 @@ class RfqServiceTest {
         verify(rfqRepository, never()).save(any());
     }
 
-    /** Requirement 9.6: the closing date must be strictly after the opening date. */
     @Test
     void createWithClosingNotAfterOpeningIsRejected() {
         storedSource(PurchaseRequestStatus.APPROVED);
@@ -154,10 +148,6 @@ class RfqServiceTest {
                 .hasMessage("Closing date must be after opening date");
     }
 
-    /**
-     * Requirements 9.3 and 9.4: items are copied in order with their source identifiers, and the
-     * first RFQ moves an APPROVED request to PROCUREMENT_STARTED.
-     */
     @Test
     void createCopiesItemsWithSourceIdsAndStartsProcurement() {
         PurchaseRequest source = storedSource(PurchaseRequestStatus.APPROVED);
@@ -185,7 +175,6 @@ class RfqServiceTest {
                 eq(created.id()), any(), any());
     }
 
-    /** Requirement 9.4: a second RFQ leaves PROCUREMENT_STARTED untouched. */
     @Test
     void createFromAStartedRequestLeavesItsStatusAlone() {
         PurchaseRequest source = storedSource(PurchaseRequestStatus.PROCUREMENT_STARTED);
@@ -198,7 +187,6 @@ class RfqServiceTest {
 
     // ----- editing, opening and cancellation (Requirements 9.5, 10.6, 11) -----
 
-    /** Requirement 9.5: header edits are a DRAFT-only activity. */
     @Test
     void editingANonDraftRfqIsRejected() {
         Rfq openRfq = storedRfq(RfqStatus.OPEN);
@@ -210,7 +198,6 @@ class RfqServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /** Requirement 10.6: an RFQ without invitations cannot be opened - pinned 400 message. */
     @Test
     void openingWithoutInvitationsIsRejected() {
         Rfq draft = storedRfq(RfqStatus.DRAFT);
@@ -225,7 +212,6 @@ class RfqServiceTest {
         assertThat(draft.getStatus()).isEqualTo(RfqStatus.DRAFT);
     }
 
-    /** Requirement 11.6: cancelling without a reason is rejected with the pinned 400 message. */
     @Test
     void cancellingWithoutAReasonIsRejected() {
         Rfq openRfq = storedRfq(RfqStatus.OPEN);
@@ -240,7 +226,6 @@ class RfqServiceTest {
         assertThat(openRfq.getStatus()).isEqualTo(RfqStatus.OPEN);
     }
 
-    /** Requirement 11.8: an AWARDED RFQ cannot be cancelled - pinned 409 message. */
     @Test
     void cancellingAnAwardedRfqIsRejected() {
         Rfq awarded = storedRfq(RfqStatus.AWARDED);
@@ -256,7 +241,6 @@ class RfqServiceTest {
         verify(rfqRepository, never()).rejectInFlightQuotations(awarded.getId());
     }
 
-    /** Requirement 11.7: cancellation persists the reason, rejects quotations and notifies vendors. */
     @Test
     void cancellingRejectsInFlightQuotationsAndNotifiesInvitedVendors() {
         Rfq openRfq = storedRfq(RfqStatus.OPEN);
@@ -279,7 +263,6 @@ class RfqServiceTest {
         }
     }
 
-    /** A cross-tenant RFQ identifier misses as 404 (Requirement 30.10). */
     @Test
     void operationsOnAForeignRfqAreNotFound() {
         UUID foreignId = UUID.randomUUID();

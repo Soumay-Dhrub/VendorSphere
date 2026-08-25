@@ -35,25 +35,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Quotation submission and revision by vendor users (Requirements 12, 13).
- *
- * <p>The submission window is OPEN-and-before-closing; at or after the closing instant everything
- * answers 409 {@code RFQ is closed for quotation submission} (Requirement 12.9). Every monetary
- * figure is computed server-side from the supplied primitives (Requirement 13); the request records
- * carry no total fields, so there is nothing to distrust.
- */
 @Service
 public class QuotationService {
 
-    /** Pinned by Requirement 12.9. */
     static final String CLOSED_MESSAGE = "RFQ is closed for quotation submission";
 
-    /** Pinned by Requirement 12.6. */
     static final String VALIDITY_MESSAGE =
             "Quotation validity date must be on or after the RFQ closing date";
 
-    /** Pinned by Requirement 16.11, enforced by the weights service. */
     static final String WEIGHTS_SUM_MESSAGE = "Criteria weights must sum to 1.00";
 
     static final String NOT_FOUND_MESSAGE = "Quotation not found";
@@ -111,12 +100,6 @@ public class QuotationService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Submits or revises the calling vendor's quotation for an OPEN RFQ (Requirements 12.1, 12.8):
-     * one priced line per RFQ item (Requirement 12.2), computed totals on every write, status
-     * SUBMITTED with the submission instant, invitation moved to RESPONDED and officers notified
-     * (Requirement 12.7).
-     */
     @Transactional
     public com.vendorsphere.quotation.dto.QuotationResponse submit(
             UUID rfqId, com.vendorsphere.quotation.dto.QuotationSubmitRequest request) {
@@ -191,7 +174,6 @@ public class QuotationService {
         }
     }
 
-    /** Requirement 12.5: field ranges, each with its own message. */
     private void validateRanges(com.vendorsphere.quotation.dto.QuotationSubmitRequest request) {
         for (var line : request.items()) {
             require(line.unitPrice() == null || line.unitPrice().signum() >= 0,
@@ -215,7 +197,6 @@ public class QuotationService {
         }
     }
 
-    /** Requirement 12.3: the 400 lists every RFQ item name that carries no price. */
     static String unpricedMessage(List<String> names) {
         Set<String> distinct = new LinkedHashSet<>(names);
         return "No price supplied for: " + String.join(", ", distinct);
@@ -307,11 +288,6 @@ public class QuotationService {
 
     // ----- reads, comparison and evaluation -----
 
-    /**
-     * One quotation with the confidentiality rules of Requirement 14 applied: a vendor user sees only
-     * its own quotation - anything else is 404 {@code Quotation not found} - and an internal user
-     * sees prices only once the RFQ is past OPEN.
-     */
     @Transactional(readOnly = true)
     public com.vendorsphere.quotation.dto.QuotationResponse get(UUID quotationId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -328,11 +304,6 @@ public class QuotationService {
         return toDetailResponse(quotation);
     }
 
-    /**
-     * Every quotation of one RFQ for internal readers; while the RFQ is OPEN the rows are redacted -
-     * identity and status without prices - so officers can watch response counts without seeing bids
-     * early (Requirement 14.5).
-     */
     @Transactional(readOnly = true)
     public List<com.vendorsphere.quotation.dto.QuotationResponse> listForRfq(UUID rfqId) {
         Rfq rfq = rfqRepository.findByIdAndOrganizationId(rfqId,
@@ -346,11 +317,6 @@ public class QuotationService {
                 .toList();
     }
 
-    /**
-     * The normalized comparison of a closed RFQ (Requirement 15): one row per qualifying quotation,
-     * ordered by evaluation score descending then total ascending. DRAFT/OPEN requests are refused -
-     * ranking half-open bidding would expose in-flight prices.
-     */
     @Transactional(readOnly = true)
     public com.vendorsphere.quotation.dto.ComparisonResponse compare(UUID rfqId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -425,12 +391,6 @@ public class QuotationService {
                 rfq.getId(), rfq.getRfqNumber(), rfq.getStatus(), rows);
     }
 
-    /**
-     * Scores every qualifying quotation of an RFQ and persists one evaluation record per quotation,
-     * leaving all statuses untouched (Requirements 16.13, 16.14). Vendor performance falls back to
-     * 50.00 while no snapshot exists - the same "no history yet" default the engine defines for an
-     * unproven vendor (Requirement 16.5).
-     */
     @Transactional
     public void evaluate(UUID rfqId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -486,7 +446,6 @@ public class QuotationService {
             java.util.Set.of(QuotationStatus.SUBMITTED, QuotationStatus.UNDER_REVIEW,
                     QuotationStatus.SELECTED, QuotationStatus.REJECTED);
 
-    /** Latest snapshot score, or the 50.00 default of Requirement 16.5 while none exists. */
     private BigDecimal performanceScoreOf(Quotation quotation) {
         return performanceVendorRepository
                 .findLatestPerformanceScore(quotation.getVendor().getId())

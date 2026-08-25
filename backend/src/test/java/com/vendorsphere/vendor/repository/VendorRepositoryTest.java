@@ -29,12 +29,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Exercises the vendor mappings and finders against PostgreSQL, because the three things under test
- * here are database behaviour a mock cannot show: the round trip of every mapped column, the
- * optimistic-lock column added by V2 (Requirement 32.3), and tenant-scoped reads that must miss on a
- * cross-tenant identifier (Requirement 30.10).
- */
 @SpringBootTest
 @ActiveProfiles("test")
 @Testcontainers
@@ -145,11 +139,6 @@ class VendorRepositoryTest {
                 mine.getId(), theirVendor.getEmail())).isFalse();
     }
 
-    /**
-     * The finder the vendor-scoped access guard resolves a caller through (Requirements 2.7, 30.8).
-     * It is organization-keyed like every other read, so a portal user can never resolve to a vendor
-     * of another tenant (Requirement 30.10).
-     */
     @Test
     @Transactional
     void resolvesTheVendorLinkedToAPortalUserOnlyWithinItsOwnOrganization() {

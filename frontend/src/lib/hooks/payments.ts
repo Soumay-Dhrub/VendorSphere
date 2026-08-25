@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * Query and mutation hooks for payments and outstanding payables.
- *
- * Recording a payment sets the invoice paid amount and derives the invoice
- * status server-side (Requirements 25.5–25.7), so the invoice caches and the
- * outstanding payables total are invalidated with it.
- */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getOutstandingPayables,

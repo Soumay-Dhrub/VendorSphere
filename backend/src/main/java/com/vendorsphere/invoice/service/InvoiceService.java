@@ -41,28 +41,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Invoice submission with three-way matching, review and match override (Requirements 22 through 24).
- *
- * <p>Submission and matching share the caller's transaction (Requirement 23.11): totals are computed
- * server-side from the supplied lines (Requirement 22.3), findings are persisted fresh on every
- * (re)evaluation, and the invoice's match status is the highest-precedence finding type - MATCHED
- * when none exist (Requirements 23.6, 23.7). Approval is blocked while any finding is unresolved
- * (Requirement 24.3); finance may override each exception with a justification.
- */
 @Service
 public class InvoiceService {
 
-    /** Pinned by Requirement 22.4. */
     static final String DUPLICATE_NUMBER_MESSAGE = "Invoice number already exists for this vendor";
 
-    /** Pinned by Requirement 22.5. */
     static final String DUE_DATE_MESSAGE = "Due date must be on or after the invoice date";
 
-    /** Pinned by Requirement 24.5. */
     static final String OVERRIDE_JUSTIFICATION_MESSAGE = "Override justification is required";
 
-    /** Pinned by Requirement 24.7. */
     static final String REJECTION_REASON_MESSAGE = "Rejection reason is required";
 
     static final String NOT_FOUND_MESSAGE = "Invoice not found";
@@ -106,10 +93,6 @@ public class InvoiceService {
         this.clock = clock;
     }
 
-    /**
-     * Submits an invoice against an order far enough along to bill (Requirement 22.1), computes its
-     * totals, runs the three-way match in the same transaction and notifies finance.
-     */
     @Transactional
     public InvoiceResponse submit(
             UUID poId, com.vendorsphere.invoice.dto.InvoiceSubmitRequest request) {
@@ -200,11 +183,6 @@ public class InvoiceService {
                 .add(line.taxAmount() == null ? Money.ZERO_MONEY : line.taxAmount());
     }
 
-    /**
-     * Re-runs the three-way match for one invoice: findings are deleted and recreated, and the match
-     * status is set to the precedence winner or MATCHED (Requirements 23.6, 23.7). Finance and the
-     * procurement manager learn about exceptions immediately (Requirement 23.8).
-     */
     @Transactional
     public void evaluateMatch(Invoice invoice) {
         var po = invoice.getPurchaseOrder();
@@ -266,10 +244,6 @@ public class InvoiceService {
         invoiceRepository.save(invoice);
     }
 
-    /**
-     * The first earlier MATCHED invoice of the same vendor whose lines equal this invoice's -
-     * the duplicate-detection input of Requirement 23.5.
-     */
     private Optional<Invoice> findDuplicateOfMatchedInvoice(Invoice invoice) {
         for (Invoice other : invoiceRepository.findByPurchaseOrderId(
                 invoice.getPurchaseOrder().getId())) {
@@ -312,12 +286,6 @@ public class InvoiceService {
                 .toList();
     }
 
-    /**
-     * Review decision (Requirement 24): SUBMITTED walks through UNDER_REVIEW first, approval is
-     * blocked while any finding is UNRESOLVED (Requirement 24.3), rejection demands a reason
-     * (Requirement 24.7), and every decision records reviewer, instant and comments and tells the
-     * vendor's users (Requirement 24.8).
-     */
     @Transactional
     public void review(UUID invoiceId, boolean approve, String comments) {
         Invoice invoice = findInternal(invoiceId);
@@ -351,7 +319,6 @@ public class InvoiceService {
                 "Invoice", saved.getId(), null, saved.getStatus().name());
     }
 
-    /** Requirement 24.3: the 409 lists every unresolved finding type still open. */
     private void assertNoUnresolvedFindings(Invoice invoice) {
         Set<MatchFindingType> unresolved = new LinkedHashSet<>();
         for (MatchFinding finding : matchFindingRepository
@@ -368,7 +335,6 @@ public class InvoiceService {
         }
     }
 
-    /** Overrides one finding with a mandatory justification (Requirement 24.4). */
     @Transactional
     public void overrideFinding(UUID invoiceId, UUID findingId, String justification) {
         if (justification == null || justification.isBlank()) {
@@ -404,7 +370,6 @@ public class InvoiceService {
         return toDetailResponse(invoice);
     }
 
-    /** Lists invoices of the tenant; a vendor user sees only its own (Requirement 22.8). */
     @Transactional(readOnly = true)
     public List<InvoiceResponse> list() {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -416,7 +381,6 @@ public class InvoiceService {
                 .toList();
     }
 
-    /** The full match result of Requirement 23.9: status, findings and per-item figures. */
     @Transactional(readOnly = true)
     public InvoiceResponse.MatchResult matchResult(UUID invoiceId) {
         Invoice invoice = findInternal(invoiceId);

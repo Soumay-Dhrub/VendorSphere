@@ -38,10 +38,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * The pinned submission rules of Requirement 12: the closed window, the unpriced-item listing and
- * the validity-date floor.
- */
 class QuotationServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-20T09:00:00Z");
@@ -108,7 +104,6 @@ class QuotationServiceTest {
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 
-    /** Requirement 12.9: at or after closing, submission is closed - pinned 409 message. */
     @Test
     void submittingAtOrAfterClosingIsRejected() {
         Rfq openButExpired = rfq(RfqStatus.OPEN, NOW.minusSeconds(60));
@@ -120,7 +115,6 @@ class QuotationServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /** A non-OPEN RFQ is equally closed to new quotations. */
     @Test
     void submittingToADraftRfqIsRejected() {
         rfq(RfqStatus.DRAFT, NOW.plusSeconds(3600));
@@ -130,7 +124,6 @@ class QuotationServiceTest {
                 .hasMessage("RFQ is closed for quotation submission");
     }
 
-    /** Requirement 12.3: the 400 lists every RFQ item name lacking a price. */
     @Test
     void anUnpricedRfqItemIsListedInTheRejection() {
         rfq(RfqStatus.OPEN, NOW.plusSeconds(3600));
@@ -145,7 +138,6 @@ class QuotationServiceTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    /** Requirement 12.6: validity may not expire before the window closes. */
     @Test
     void aValidityDateBeforeClosingIsRejected() {
         Rfq open = rfq(RfqStatus.OPEN, NOW.plusSeconds(86400));

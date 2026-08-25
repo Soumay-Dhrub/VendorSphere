@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * Chrome of the authenticated area: sidebar navigation, header and notification bell.
- *
- * The signed-in user is held client-side by `src/lib/api.ts`, so the shell resolves it
- * through `useStoredUser` (server render and hydration included) and sends anyone without
- * a session to the sign-in screen instead of rendering empty chrome.
- */
-
 import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Tenant-scoped delivery reads via the parent purchase order. */
 public interface DeliveryRepository extends JpaRepository<Delivery, UUID> {
 
     List<Delivery> findByPurchaseOrderIdOrderByDeliveryDateAscIdAsc(UUID purchaseOrderId);

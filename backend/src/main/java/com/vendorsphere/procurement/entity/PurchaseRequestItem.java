@@ -10,17 +10,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
-/**
- * One line of a purchase request (Requirement 7.4).
- *
- * <p>{@code purchase_request_items} carries {@code created_at} but no {@code updated_at}, so this
- * entity extends {@link CreatedOnlyEntity}. {@code quantity} maps the {@code DECIMAL(12, 3)} column;
- * every stored value is normalized to {@link com.vendorsphere.common.util.Money#QUANTITY_SCALE} by
- * the service, so no arithmetic or rescaling happens here.
- *
- * <p>{@code sortOrder} is assigned by the service as the current item count at creation and is never
- * reordered afterwards, so items keep authoring order on every read (Requirement 7.4).
- */
 @Entity
 @Table(name = "purchase_request_items")
 public class PurchaseRequestItem extends CreatedOnlyEntity {

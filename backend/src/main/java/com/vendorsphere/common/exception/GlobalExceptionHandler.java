@@ -55,10 +55,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(OPTIMISTIC_LOCK_MESSAGE));
     }
 
-    /**
-     * Requirement 33.4: a request cut off by Spring's own multipart limit never reaches
-     * {@code AttachmentService}, so it is mapped here to the same 413 and the same wording.
-     */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(
             MaxUploadSizeExceededException ex) {
@@ -66,14 +62,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(AttachmentService.SIZE_LIMIT_MESSAGE));
     }
 
-    /**
-     * Requirement 29.9: a write verb against a read-only endpoint must answer 405.
-     *
-     * <p>Spring MVC raises this exception during handler lookup, but the catch-all
-     * {@link #handleGeneric} below would otherwise claim it and report 500. Declaring it explicitly
-     * restores the 405 — and the {@code Allow} header — while keeping the {@code ApiResponse}
-     * envelope every other error uses.
-     */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException ex) {
@@ -86,16 +74,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Method " + ex.getMethod() + " is not supported"));
     }
 
-    /**
-     * An unmapped path answers 404, not 500.
-     *
-     * <p>When no handler matches, Spring MVC falls through to static resource handling, which raises
-     * {@link NoResourceFoundException} — an exception that already carries 404. The catch-all
-     * {@link #handleGeneric} below would otherwise claim it and report 500, so a plain typo in a URL
-     * would look like a server fault. {@link NoHandlerFoundException} is the equivalent when static
-     * resource handling is not in the chain, and is mapped alongside it so the answer does not depend
-     * on that configuration.
-     */
     @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
     public ResponseEntity<ApiResponse<Void>> handleNoHandler(Exception ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)

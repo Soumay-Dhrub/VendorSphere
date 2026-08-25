@@ -32,17 +32,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * Unit tests for the upload gates of {@link AttachmentServiceImpl} (Requirements 33.3, 33.4, 33.5).
- *
- * <p>No Spring context and no filesystem. The byte store is a recording double, which is what lets
- * these tests assert the gates run <em>before</em> any bytes are written: a rejected upload must
- * leave {@link RecordingStorage#stored} empty.
- *
- * <p>The collaborators are plain test doubles rather than Mockito mocks because the JDK in use is
- * newer than the bytecode instrumentation Mockito relies on, and the whole point of these tests is
- * to run without a container.
- */
 class AttachmentServiceImplTest {
 
     private static final UUID ORGANIZATION_ID = UUID.randomUUID();
@@ -177,7 +166,6 @@ class AttachmentServiceImplTest {
 
     // ----- test doubles -----
 
-    /** Records the references it handed out so a rejected upload can be shown to write nothing. */
     private static final class RecordingStorage implements AttachmentStorage {
 
         private final List<String> stored = new ArrayList<>();
@@ -239,7 +227,6 @@ class AttachmentServiceImplTest {
         });
     }
 
-    /** No module has registered an owner access policy in this unit test. */
     private static ObjectProvider<AttachmentOwnerAccessPolicy> noAccessPolicies() {
         return stub(ObjectProvider.class, (proxy, method, args) -> {
             if ("stream".equals(method.getName())) {

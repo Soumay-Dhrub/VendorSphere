@@ -33,14 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Quotation, comparison, evaluation and selection endpoints (Requirements 12 through 17).
- *
- * <p>Submission is vendor work; comparison and evaluation are procurement work. The comparison
- * endpoint's grant deliberately excludes VENDOR - a vendor asking for the comparison is answered 403
- * at this boundary before any service code runs (Requirement 14.4). Criteria weights are configured
- * by the PROCUREMENT_MANAGER (Requirement 30.5).
- */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Quotations")
@@ -63,7 +55,6 @@ public class QuotationController {
         this.attachmentService = attachmentService;
     }
 
-    /** Requirement 12.1: a linked, invited vendor submits into an OPEN window. */
     @PostMapping("/rfqs/{rfqId}/quotations")
     @PreAuthorize("hasRole('VENDOR')")
     @ResponseStatus(HttpStatus.CREATED)
@@ -73,7 +64,6 @@ public class QuotationController {
         return ApiResponse.ok("Quotation submitted", quotationService.submit(rfqId, request));
     }
 
-    /** Requirement 14.3: a vendor user lists only its own quotations here. */
     @GetMapping("/rfqs/{rfqId}/quotations")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List an RFQ's quotations (vendor users see only their own)")
@@ -98,7 +88,6 @@ public class QuotationController {
                 AttachmentOwnerType.QUOTATION, id, file));
     }
 
-    /** Requirement 14.4: no VENDOR in the grant - the boundary itself answers 403. */
     @GetMapping("/rfqs/{rfqId}/comparison")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'PROCUREMENT_MANAGER')")
     @Operation(summary = "The normalized side-by-side comparison of a closed RFQ")
@@ -123,7 +112,6 @@ public class QuotationController {
         return ApiResponse.ok("Vendor selected", null);
     }
 
-    /** Requirement 17.6: comments land on the quotation's evaluation record. */
     @PostMapping("/quotations/{id}/comments")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'PROCUREMENT_MANAGER')")
     @Operation(summary = "Record a procurement comment on a quotation's evaluation")

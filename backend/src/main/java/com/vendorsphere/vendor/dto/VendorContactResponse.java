@@ -5,12 +5,6 @@ import com.vendorsphere.vendor.entity.VendorContact;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * One vendor contact as returned by a create, update or list read (Requirements 4.1, 4.3).
- *
- * <p>{@code vendorId} is read from the contact's parent, which is already loaded by the service
- * before the contact is touched, so projecting it triggers no additional lazy load.
- */
 public record VendorContactResponse(
         UUID id,
         UUID vendorId,

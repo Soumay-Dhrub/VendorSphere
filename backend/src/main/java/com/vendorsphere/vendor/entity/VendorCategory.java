@@ -9,13 +9,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/**
- * Supply-area taxonomy entry owned by one organization (Requirement 4.4).
- *
- * <p>{@code vendor_categories} carries {@code created_at} but no {@code updated_at}, so this entity
- * extends {@link CreatedOnlyEntity}. Name uniqueness within an organization is enforced by the
- * {@code UNIQUE (organization_id, name)} constraint from V1.
- */
 @Entity
 @Table(name = "vendor_categories")
 public class VendorCategory extends CreatedOnlyEntity {

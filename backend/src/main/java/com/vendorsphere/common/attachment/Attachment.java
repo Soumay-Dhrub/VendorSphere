@@ -14,16 +14,6 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
-/**
- * Metadata of one stored file. Rows are polymorphic: {@code ownerType} plus {@code ownerId}
- * identify the record the file belongs to (Requirement 33.1).
- *
- * <p>{@code storageReference} is a randomly generated identifier and never contains the original
- * file name, which is retained as display metadata only (Requirement 33.5).
- *
- * <p>The {@code attachments} table carries {@code created_at} but no {@code updated_at}, so this
- * entity extends {@link CreatedOnlyEntity}.
- */
 @Entity
 @Table(name = "attachments")
 public class Attachment extends CreatedOnlyEntity {

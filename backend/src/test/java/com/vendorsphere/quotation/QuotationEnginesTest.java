@@ -9,16 +9,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
-/**
- * The arithmetic of Requirements 13 and 16 as pure functions: totals are internally consistent at
- * money scale, component scores use the zero/absent defaults, and exactly one quotation is
- * recommended with the lowest-total tie-break.
- */
 class QuotationEnginesTest {
 
     // ----- QuotationCalculator (Requirement 13) -----
 
-    /** Requirements 13.1 through 13.5 on a two-line example computed by hand. */
     @Test
     void totalsAreComputedServerSideAtMoneyScale() {
         var line1 = new QuotationCalculator.ItemInput(
@@ -49,7 +43,6 @@ class QuotationEnginesTest {
                 new BigDecimal("87.00"));
     }
 
-    /** Requirement 16.1: the cheapest bid earns the full price score of 100. */
     @Test
     void theCheapestQuotationEarnsTheFullPriceScore() {
         EvaluationEngine.Input cheap = input(1_150_000, 15, 24);
@@ -63,7 +56,6 @@ class QuotationEnginesTest {
                 .containsExactly(new BigDecimal("100.00"), new BigDecimal("95.83"));
     }
 
-    /** Requirements 16.6 and 16.7: absent or zero periods and warranties score 0. */
     @Test
     void absentDeliveryOrWarrantyScoresZero() {
         EvaluationEngine.Input noExtras = input(1_000_000, null, 0);
@@ -75,7 +67,6 @@ class QuotationEnginesTest {
         assertThat(results.get(0).warrantyScore()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
-    /** Requirement 16.5: a vendor without history defaults to a performance score of 50. */
     @Test
     void aVendorWithoutHistoryDefaultsToFifty() {
         EvaluationEngine.Input unknown = new EvaluationEngine.Input(UUID.randomUUID(),
@@ -87,10 +78,6 @@ class QuotationEnginesTest {
         assertThat(results.get(0).performanceScore()).isEqualByComparingTo(new BigDecimal("50.00"));
     }
 
-    /**
-     * Requirement 16.12: exactly one recommendation, highest score first, equal scores resolved to
-     * the lowest total amount.
-     */
     @Test
     void exactlyOneQuotationIsRecommendedWithLowestTotalTieBreak() {
         // Identical scores by construction: same totals, same periods, same warranties.
@@ -108,7 +95,6 @@ class QuotationEnginesTest {
         assertThat(recommendedCount).isEqualTo(1);
     }
 
-    /** Requirement 16.8: stored weights replace the defaults in the dot product. */
     @Test
     void weightsShapeTheEvaluationScore() {
         EvaluationEngine.Input priceOnly = input(1_000_000, 30, 1);

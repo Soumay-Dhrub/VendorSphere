@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * Query and mutation hooks for quotations, comparison, evaluation, selection and
- * criteria weights.
- */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addQuotationComment,
@@ -96,7 +91,6 @@ export function useRfqComparison(rfqId: Uuid | undefined) {
   });
 }
 
-/** Scoring leaves the quotation and RFQ statuses untouched (Requirement 16.14). */
 export function useEvaluateRfq(rfqId: Uuid) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -124,7 +118,6 @@ export function useAddQuotationComment(rfqId: Uuid) {
   });
 }
 
-/** Award: one quotation SELECTED, the rest REJECTED, RFQ AWARDED (Req 17.1). */
 export function useSelectQuotation(rfqId: Uuid) {
   const queryClient = useQueryClient();
   return useMutation({

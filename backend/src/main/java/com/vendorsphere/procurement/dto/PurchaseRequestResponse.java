@@ -7,14 +7,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/**
- * One purchase request as returned by a create, update, review, detail or list read.
- *
- * <p>Carries every figure Requirement 8.9 asks a requester-facing read to report - status, reviewer
- * name when recorded, review timestamp and notes when present and the identifiers of derived RFQs -
- * alongside the authoring fields. {@code items} is ordered by authoring order; list reads supply it
- * batched for the whole page so per-row cost stays fixed (Requirement 31.2).
- */
 public record PurchaseRequestResponse(
         UUID id,
         String requestNumber,
@@ -37,7 +29,6 @@ public record PurchaseRequestResponse(
         Instant updatedAt
 ) {
 
-    /** One line item of a purchase request (Requirement 7.4). */
     public record PurchaseRequestItemResponse(
             UUID id,
             String itemName,
@@ -59,10 +50,6 @@ public record PurchaseRequestResponse(
         }
     }
 
-    /**
-     * Projects a stored request; the caller supplies the queried figures - items, reviewer name and
-     * derived RFQ identifiers - because they are resolved outside this record.
-     */
     public static PurchaseRequestResponse from(
             com.vendorsphere.procurement.entity.PurchaseRequest request,
             java.util.List<PurchaseRequestItemResponse> items,

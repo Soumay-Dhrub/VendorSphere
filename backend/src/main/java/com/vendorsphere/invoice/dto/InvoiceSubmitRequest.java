@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** Invoice submission payload (Requirement 22); totals are computed server-side. */
 public record InvoiceSubmitRequest(
         @NotBlank @Size(max = 100) String invoiceNumber,
         @NotNull LocalDate invoiceDate,

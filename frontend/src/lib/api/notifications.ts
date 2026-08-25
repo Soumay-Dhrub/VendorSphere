@@ -1,9 +1,3 @@
-/**
- * Notification list, unread count and read-state endpoints (`/notifications`).
- *
- * The list is scoped to the calling user server-side and ordered by creation
- * instant descending (Requirement 28.3).
- */
 
 import { apiGet, apiGetPage, apiPatchEmpty } from "./client";
 import type { IsoInstant, PageParams, PageResponse, Uuid } from "./types";
@@ -21,7 +15,7 @@ export type NotificationResponse = {
 };
 
 export type NotificationListParams = PageParams & {
-  /** Restricts the list to unread notifications (Requirement 28.4). */
+
   unreadOnly?: boolean;
 };
 

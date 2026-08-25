@@ -18,12 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Criteria-API implementation of the filtered audit read.
- *
- * <p>Written by hand rather than through {@code JpaSpecificationExecutor} so that the repository
- * inherits no delete operation (Requirement 29.8). The query builds only {@code SELECT}s.
- */
 public class AuditLogSearchImpl implements AuditLogSearch {
 
     private final EntityManager entityManager;
@@ -62,10 +56,6 @@ public class AuditLogSearchImpl implements AuditLogSearch {
         return entityManager.createQuery(query).getSingleResult();
     }
 
-    /**
-     * Tenant scope first, then one predicate per supplied filter, so several filters narrow the
-     * result together (Requirement 29.5).
-     */
     private Predicate[] predicates(
             CriteriaBuilder builder,
             Root<AuditLog> root,

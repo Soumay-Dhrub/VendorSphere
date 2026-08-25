@@ -31,14 +31,10 @@ const buttonVariants = cva(
 
 export type ButtonProps = React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    /** Renders the child element instead of a `button`, keeping the button styling. */
+
     asChild?: boolean;
   };
 
-/**
- * Icon-only buttons (`size="icon"`) carry no text, so callers must supply an
- * `aria-label` to give the control an accessible name (Requirement 35.14).
- */
 export function Button({ className, variant, size, asChild = false, ...props }: ButtonProps) {
   const Component = asChild ? Slot : "button";
   return (

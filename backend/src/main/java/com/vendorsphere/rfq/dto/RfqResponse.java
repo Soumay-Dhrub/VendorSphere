@@ -12,12 +12,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * One RFQ as returned by a read: the header, its items in authoring order and its invitations.
- *
- * <p>Invitations carry the vendor company name resolved from the already-loaded vendor, so a list
- * never triggers per-row lazy loads.
- */
 public record RfqResponse(
         UUID id,
         String rfqNumber,

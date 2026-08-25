@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * The procurement dashboard (Requirement 35.1): the seven headline figures of
- * Requirement 27.1 rendered from /analytics/dashboard, with the API status panel
- * kept as a start-up aid while Docker Compose comes up.
- */
-
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser, getHealth } from "@/lib/api";
 import { useDashboardSummary } from "@/lib/hooks/analytics";

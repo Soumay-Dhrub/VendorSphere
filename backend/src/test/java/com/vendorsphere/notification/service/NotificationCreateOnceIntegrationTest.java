@@ -22,16 +22,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Confirms the write-time dedupe of Requirement 28.9 against PostgreSQL, and - the reason the insert
- * resolves the conflict inside the statement instead of catching a violation - that a duplicate leaves
- * the caller's transaction usable.
- *
- * <p>The test method is transactional, so the service calls join it exactly as a business service
- * would. Had the duplicate raised a unique-constraint violation, PostgreSQL would have aborted this
- * transaction and Spring would have marked it rollback-only, and the assertions after the duplicate
- * could not run at all.
- */
 @SpringBootTest
 @ActiveProfiles("test")
 @Testcontainers
@@ -82,7 +72,6 @@ class NotificationCreateOnceIntegrationTest {
         assertThat(notificationRepository.countByUserIdAndReadFalse(recipientId)).isEqualTo(2);
     }
 
-    /** A different event for the same entity is a different notification, not a duplicate. */
     @Test
     @Transactional
     void createOnceDeduplicatesPerEventRatherThanPerEntity() {

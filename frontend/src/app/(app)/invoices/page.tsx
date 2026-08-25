@@ -1,6 +1,5 @@
 "use client";
 
-/** Invoice list with status filter and match-state badges (Requirement 35.7). */
 import { useState } from "react";
 import { useInvoices } from "@/lib/hooks/invoices";
 import { formatMoney } from "@/lib/format";

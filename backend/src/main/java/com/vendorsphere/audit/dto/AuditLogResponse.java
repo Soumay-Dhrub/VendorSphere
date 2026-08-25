@@ -6,13 +6,6 @@ import com.vendorsphere.audit.entity.AuditLog;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * One audit trail row as returned by {@code GET /audit-logs} (Requirement 29.1 lists every field).
- *
- * <p>{@code previousValue} and {@code newValue} are the stored JSON documents as text. They are
- * passed through untouched so the reader sees exactly what was recorded; the redaction that keeps
- * credentials out of them happened at write time.
- */
 public record AuditLogResponse(
         UUID id,
         UUID organizationId,

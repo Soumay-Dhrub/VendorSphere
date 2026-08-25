@@ -13,7 +13,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** One month's scored performance of a vendor (Requirement 26.9), upserted per period. */
 @Entity
 @Table(name = "vendor_performance_snapshots")
 public class VendorPerformanceSnapshot extends IdentifiedEntity {

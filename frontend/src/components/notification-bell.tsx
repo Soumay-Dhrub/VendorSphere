@@ -1,19 +1,9 @@
 "use client";
 
-/**
- * Notification indicator for the shell header (Requirement 35.11).
- *
- * The count comes from the existing `useUnreadNotificationCount` hook, so it travels
- * through `apiClient` and TanStack Query like every other figure (Requirement 35.13).
- * The control is a link with an accessible name that states the count, because the icon
- * and the badge alone convey nothing to a screen reader (Requirement 35.14).
- */
-
 import { Bell } from "lucide-react";
 import Link from "next/link";
 import { useUnreadNotificationCount } from "@/lib/hooks/notifications";
 
-/** Accessible name of the bell, stating the unread count in words. */
 export function notificationBellLabel(unreadCount: number): string {
   if (unreadCount <= 0) {
     return "Notifications, no unread notifications";

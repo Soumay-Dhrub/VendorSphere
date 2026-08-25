@@ -8,13 +8,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/**
- * One named contact of a vendor (Requirement 4.1).
- *
- * <p>{@code vendor_contacts} carries {@code created_at} but no {@code updated_at}, so this entity
- * extends {@link CreatedOnlyEntity}. The row reaches its organization through its vendor, which is
- * why the repository finders traverse {@code vendor.organization.id} rather than a local column.
- */
 @Entity
 @Table(name = "vendor_contacts")
 public class VendorContact extends CreatedOnlyEntity {
@@ -34,7 +27,6 @@ public class VendorContact extends CreatedOnlyEntity {
     @Column(length = 100)
     private String designation;
 
-    /** At most one contact per vendor holds this flag; the service layer enforces that. */
     @Column(name = "primary_contact", nullable = false)
     private boolean primaryContact = false;
 

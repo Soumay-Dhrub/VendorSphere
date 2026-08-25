@@ -9,21 +9,6 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
-/**
- * One reference number counter, keyed on organization, record type prefix and calendar year.
- *
- * <p>{@code next_value} holds the highest sequence value handed out so far and starts at {@code 0},
- * so the first allocation increments it to {@code 1} and formats as {@code 001}.
- *
- * <p>This entity deliberately extends neither {@link BaseEntity} nor {@link CreatedOnlyEntity}:
- * {@code reference_sequences} carries neither {@code created_at} nor {@code updated_at}, so either
- * superclass would map a column that does not exist and fail
- * {@code spring.jpa.hibernate.ddl-auto: validate}.
- *
- * <p>Rows are never written through this mapping. Allocation runs as a single upsert statement (see
- * {@code ReferenceSequenceRepository#allocateNextValue}) so that concurrent transactions serialize
- * on the row lock rather than racing a read-then-write.
- */
 @Entity
 @Table(name = "reference_sequences")
 public class ReferenceSequence {

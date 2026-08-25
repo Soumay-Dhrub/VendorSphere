@@ -14,13 +14,6 @@ public final class SecurityUtils {
     private SecurityUtils() {
     }
 
-    /**
-     * The authenticated principal, or empty when the current thread carries no authenticated user.
-     *
-     * <p>Scheduled jobs run outside any request and therefore outside any security context, yet they
-     * call into the same services a request does. Code on those paths asks this question instead of
-     * {@link #getCurrentUser()}, which would raise 401 for a caller that is not a user at all.
-     */
     public static Optional<UserPrincipal> findCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
@@ -47,10 +40,6 @@ public final class SecurityUtils {
         return hasRole(getCurrentUser(), role);
     }
 
-    /**
-     * Whether {@code principal} holds {@code role}, for callers that already resolved the principal
-     * through {@link #findCurrentUser()} and must not re-enter the throwing accessor.
-     */
     public static boolean hasRole(UserPrincipal principal, String role) {
         return principal.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + role));

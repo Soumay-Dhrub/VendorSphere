@@ -51,11 +51,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/**
- * The creation defaults of Requirement 2.1, the update rule of Requirement 2.4 and the two messages
- * Requirements 2.3 and 2.6 pin. Mapping and tenant scoping of the finders themselves are exercised
- * against PostgreSQL in {@code VendorRepositoryTest}.
- */
 class VendorServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-14T09:15:30Z");
@@ -115,7 +110,6 @@ class VendorServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirement 2.1. */
     @Test
     void registrationAppliesTheGeneratedCodeProspectiveStatusZeroRatingAndRegistrationInstant() {
         when(referenceNumberGenerator.allocate(organizationId, ReferencePrefix.VEN))
@@ -134,7 +128,6 @@ class VendorServiceTest {
                 eq(AuditAction.VENDOR_CREATED), eq("Vendor"), eq(response.id()), eq(null), any());
     }
 
-    /** Requirement 2.3: uniqueness is scoped to the caller's organization. */
     @Test
     void registeringADuplicateEmailInTheSameOrganizationIsRejected() {
         when(vendorRepository.existsByOrganizationIdAndEmailIgnoreCase(organizationId, "sales@acme.test"))
@@ -150,7 +143,6 @@ class VendorServiceTest {
         verify(referenceNumberGenerator, never()).allocate(any(), any());
     }
 
-    /** Requirement 2.6: a cross-tenant or unknown identifier is not found, never forbidden. */
     @Test
     void readingAVendorOfAnotherOrganizationIsNotFound() {
         UUID foreignVendorId = UUID.randomUUID();
@@ -164,7 +156,6 @@ class VendorServiceTest {
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /** Requirement 2.6 applies to writes as well as reads. */
     @Test
     void updatingAVendorOfAnotherOrganizationIsNotFound() {
         UUID foreignVendorId = UUID.randomUUID();
@@ -181,7 +172,6 @@ class VendorServiceTest {
         verify(vendorRepository, never()).save(any());
     }
 
-    /** Requirement 2.4: the profile fields change, status and rating do not. */
     @Test
     void updateAppliesProfileFieldsAndLeavesStatusAndRatingUnchanged() {
         Vendor existing = existingVendor();
@@ -210,7 +200,6 @@ class VendorServiceTest {
                 eq(AuditAction.VENDOR_UPDATED), eq("Vendor"), eq(existing.getId()), any(), any());
     }
 
-    /** Requirement 2.3: moving to an address another vendor already holds is still a clash. */
     @Test
     void updatingToAnEmailHeldByAnotherVendorIsRejectedButKeepingTheOwnEmailIsNot() {
         Vendor existing = existingVendor();
@@ -232,10 +221,6 @@ class VendorServiceTest {
         verify(vendorRepository).save(existing);
     }
 
-    /**
-     * Requirement 2.5: a detail read carries the category name, the performance score and the count
-     * of documents expiring within 30 days of the request date.
-     */
     @Test
     void readReturnsCategoryNamePerformanceScoreAndExpiringDocumentCount() {
         Vendor existing = existingVendor();
@@ -260,7 +245,6 @@ class VendorServiceTest {
         assertThat(response.performanceScore()).isEqualByComparingTo("85.00");
     }
 
-    /** A recorded snapshot is authoritative over the rating-derived fallback. */
     @Test
     void readPrefersTheLatestPerformanceSnapshotScore() {
         Vendor existing = existingVendor();
@@ -273,11 +257,6 @@ class VendorServiceTest {
         assertThat(service.get(existing.getId()).performanceScore()).isEqualByComparingTo("72.40");
     }
 
-    /**
-     * Requirements 6.7 and 31.5: exactly the four fields of 6.7 sort, and anything else is a 400 whose
-     * message lists them. The listing hands {@code PageSupport} its whitelist, so this is the contract
-     * the controller of task 5.10 inherits.
-     */
     @Test
     void onlyTheFourSortableFieldsAreAcceptedAndAnythingElseIsRejectedListingThem() {
         assertThat(VendorService.SORTABLE.fields())
@@ -298,11 +277,6 @@ class VendorServiceTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * Requirement 31.2: the two derived figures of a row are read once per page. A page of three
-     * vendors must not reach for the single-vendor score query or the single-vendor document count,
-     * because that is the N+1 fan-out this listing exists to avoid.
-     */
     @Test
     void searchDerivesEveryRowFromOneBatchQueryPerFigureRatherThanOnePerRow() {
         Vendor withSnapshot = existingVendor();

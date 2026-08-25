@@ -28,22 +28,11 @@ import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Vendor selection and award (Requirement 17).
- *
- * <p>One transaction flips the whole award state: the target quotation to SELECTED, every other
- * in-flight quotation to REJECTED, the RFQ to AWARDED and the winning invitation to AWARDED
- * (Requirements 17.1, 17.10). The decision is never implicit - the evaluation engine's recommended
- * flag only advises; an explicit select request with a justification is the only path here
- * (Requirement 17.7).
- */
 @Service
 public class SelectionService {
 
-    /** Pinned by Requirement 17.3. */
     static final String JUSTIFICATION_MESSAGE = "Selection justification is required";
 
-    /** Pinned by Requirement 17.4. */
     static final String ALREADY_AWARDED_MESSAGE = "RFQ is already awarded";
 
     static final String RFQ_NOT_FOUND_MESSAGE = "RFQ not found";
@@ -84,14 +73,6 @@ public class SelectionService {
         this.clock = clock;
     }
 
-    /**
-     * Awards an RFQ to one quotation (Requirement 17.1).
-     *
-     * <p>A CLOSED RFQ walks CLOSED&rarr;EVALUATION&rarr;AWARDED internally - the same pass-through
-     * pattern the purchase request review uses, because no separate "start evaluation" endpoint
-     * exists. A WITHDRAWN or REJECTED target is refused with a message naming its status
-     * (Requirement 17.5). Every invited vendor's users learn the outcome (Requirement 17.8).
-     */
     @Transactional
     public void select(UUID rfqId, UUID quotationId, String justification) {
         String reason = justification == null || justification.isBlank()
@@ -167,10 +148,6 @@ public class SelectionService {
         }
     }
 
-    /**
-     * Persists procurement comments on the evaluation record of one quotation (Requirement 17.6),
-     * creating a minimal record when the RFQ has not been evaluated yet.
-     */
     @Transactional
     public void comment(UUID quotationId, String text) {
         String comments = text == null || text.isBlank() ? null : text.trim();

@@ -1,7 +1,5 @@
 "use client";
 
-/** Query and mutation hooks for vendors, contacts, documents and categories. */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   changeVendorStatus,

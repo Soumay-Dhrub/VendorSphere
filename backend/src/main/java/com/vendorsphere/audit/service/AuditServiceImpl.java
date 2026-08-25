@@ -28,7 +28,6 @@ import java.util.UUID;
 @Service
 public class AuditServiceImpl implements AuditService {
 
-    /** {@code audit_logs.ip_address} is {@code VARCHAR(45)}, wide enough for an IPv6 literal. */
     private static final int IP_ADDRESS_MAX_LENGTH = 45;
 
     private static final String FORWARDED_FOR_HEADER = "X-Forwarded-For";
@@ -51,12 +50,6 @@ public class AuditServiceImpl implements AuditService {
         this.payloadSerializer = payloadSerializer;
     }
 
-    /**
-     * Joins the caller's transaction with the default {@link Propagation#REQUIRED}: the audit row and
-     * the business change commit or roll back together (Requirement 29.10). A new transaction here
-     * would let the trail survive a rolled-back change and, worse, let a failed audit write pass
-     * unnoticed, so {@code REQUIRES_NEW} is deliberately not used.
-     */
     @Override
     @Transactional
     public void record(
@@ -97,14 +90,6 @@ public class AuditServiceImpl implements AuditService {
                 AuditLogResponse::from);
     }
 
-    /**
-     * The authenticated principal when there is one.
-     *
-     * <p>Reads the security context directly rather than through
-     * {@link SecurityUtils#getCurrentUser()} because that raises 401 when nothing is authenticated,
-     * and an audit write triggered by a scheduled job must record a system entry instead of failing
-     * the job.
-     */
     private Optional<UserPrincipal> currentPrincipal() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
@@ -114,7 +99,6 @@ public class AuditServiceImpl implements AuditService {
         return Optional.of(principal);
     }
 
-    /** The current servlet request when the change originates from one, empty inside a job. */
     private Optional<HttpServletRequest> currentRequest() {
         RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
         if (attributes instanceof ServletRequestAttributes servletAttributes) {
@@ -123,11 +107,6 @@ public class AuditServiceImpl implements AuditService {
         return Optional.empty();
     }
 
-    /**
-     * Prefers the first hop of {@code X-Forwarded-For} so a proxied deployment records the client
-     * rather than the proxy, and truncates to the column width: a long forwarding chain must not
-     * turn into a constraint violation that rolls a business change back.
-     */
     private String resolveIpAddress(HttpServletRequest request) {
         String forwardedFor = request.getHeader(FORWARDED_FOR_HEADER);
         String candidate = forwardedFor == null || forwardedFor.isBlank()

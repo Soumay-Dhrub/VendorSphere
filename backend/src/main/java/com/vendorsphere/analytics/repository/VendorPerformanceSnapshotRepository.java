@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Snapshot reads; UNIQUE (vendor_id, period_start, period_end) backs the upsert. */
 public interface VendorPerformanceSnapshotRepository
         extends JpaRepository<VendorPerformanceSnapshot, UUID> {
 

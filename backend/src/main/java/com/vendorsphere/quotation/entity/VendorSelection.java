@@ -14,14 +14,6 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
-/**
- * The award record of one RFQ (Requirement 17.2): which quotation won, who decided it and why.
- * {@code rfq_id} is UNIQUE in V1 - one selection per RFQ, enforced by the database behind the
- * already-awarded guard.
- *
- * <p>The table has no {@code created_at}; {@code selected_at} plays that role, so this entity extends
- * {@link IdentifiedEntity}.
- */
 @Entity
 @Table(name = "vendor_selections")
 public class VendorSelection extends IdentifiedEntity {

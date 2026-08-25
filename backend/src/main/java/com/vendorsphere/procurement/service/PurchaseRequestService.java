@@ -46,23 +46,18 @@ import java.util.stream.Collectors;
 @Service
 public class PurchaseRequestService {
 
-    /** Pinned by Requirement 7.5. */
     static final String QUANTITY_MESSAGE = "Quantity must be greater than zero";
 
-    /** Pinned by Requirement 7.7. */
     static final String EMPTY_SUBMISSION_MESSAGE = "Purchase request requires at least one item";
 
-    /** Pinned by Requirement 8.3. */
     static final String ITEMS_LOCKED_MESSAGE = "Purchase request items are locked after submission";
 
-    /** Pinned by Requirement 8.6. */
     static final String REJECTION_REASON_MESSAGE = "Rejection reason is required";
 
     static final String NOT_FOUND_MESSAGE = "Purchase request not found";
     static final String DEPARTMENT_NOT_FOUND_MESSAGE = "Department not found";
     static final String ITEM_NOT_FOUND_MESSAGE = "Purchase request item not found";
 
-    /** Sortable fields of the listing; the controller defaults to createdAt descending. */
     public static final SortWhitelist SORTABLE =
             SortWhitelist.of("createdAt", "requiredDate", "priority", "status");
 
@@ -98,16 +93,6 @@ public class PurchaseRequestService {
         this.clock = clock;
     }
 
-    /**
-     * Creates a DRAFT request with a generated {@code PR} number, the actor as requester and the
-     * actor's organization (Requirement 7.1), defaulting the priority to MEDIUM when absent
-     * (Requirement 7.2).
-     *
-     * <p>The request number is allocated on this transaction, so it is consumed exactly when the row
-     * commits and released when it rolls back (Requirement 1.5). The organization is taken from the
-     * department after the department has been resolved within the caller's tenant, so a request can
-     * never be filed under a foreign department or tenant.
-     */
     @Transactional
     public PurchaseRequestResponse create(PurchaseRequestHeaderRequest request) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -125,11 +110,6 @@ public class PurchaseRequestService {
         return toDetailResponse(saved);
     }
 
-    /**
-     * Applies new header values to a DRAFT request. Authoring ends at submission, so any later state
-     * is answered by {@link #findVisibleDraft} with the same pinned lock the items sit under: a
-     * requester must not quietly change what procurement is already quoting.
-     */
     @Transactional
     public PurchaseRequestResponse update(
             UUID purchaseRequestId, PurchaseRequestHeaderRequest request) {
@@ -161,20 +141,12 @@ public class PurchaseRequestService {
         }
     }
 
-    /** Resolves the department within the caller's organization; a foreign id misses as 404. */
     private Department resolveDepartment(UUID departmentId, UUID organizationId) {
         return departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
                 .orElseThrow(() -> new BusinessException(
                         DEPARTMENT_NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * Adds one line item to a DRAFT request (Requirement 7.4).
-     *
-     * <p>The quantity is normalized to quantity scale before storage and must be strictly positive
-     * (Requirement 7.5). The sort order is the current item count of the request, so items keep
-     * authoring order without a client-supplied sequence that could collide or be forged.
-     */
     @Transactional
     public PurchaseRequestResponse addItem(
             UUID purchaseRequestId, PurchaseRequestItemRequest request) {
@@ -190,11 +162,6 @@ public class PurchaseRequestService {
         return toDetailResponse(purchaseRequest);
     }
 
-    /**
-     * Updates one line item of a DRAFT request. The sort order is authoring state and survives an
-     * edit: re-sequencing lines is not part of the requirement, and keeping it means a client cannot
-     * reorder another requester's line items by rewriting them.
-     */
     @Transactional
     public PurchaseRequestResponse updateItem(
             UUID purchaseRequestId, UUID itemId, PurchaseRequestItemRequest request) {
@@ -206,7 +173,6 @@ public class PurchaseRequestService {
         return toDetailResponse(purchaseRequest);
     }
 
-    /** Removes one line item from a DRAFT request. Remaining items keep their sort orders. */
     @Transactional
     public PurchaseRequestResponse removeItem(UUID purchaseRequestId, UUID itemId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -231,11 +197,6 @@ public class PurchaseRequestService {
         item.setSpecification(request.specification());
     }
 
-    /**
-     * Loads an item through its parent request and organization, so both parts of the nested path
-     * must agree before an item is touched - an item id hanging off a different request is reported
-     * as {@code Purchase request item not found} for the same reason vendor contact ids are.
-     */
     private PurchaseRequestItem findItem(
             UUID purchaseRequestId, UUID itemId, UUID organizationId) {
         PurchaseRequestItem item = purchaseRequestItemRepository
@@ -248,17 +209,6 @@ public class PurchaseRequestService {
         return item;
     }
 
-    /**
-     * Submits a DRAFT request for review (Requirement 8.1).
-     *
-     * <p>The empty-item guard runs before the transition is asserted, so a request with no lines is
-     * answered with the 400 of Requirement 7.7 whether or not the state change would have been legal;
-     * an empty request is invalid to submit from any state that could hold items.
-     *
-     * <p>On success every PROCUREMENT_MANAGER of the organization is notified (Requirement 8.4) and a
-     * {@code PURCHASE_REQUEST_SUBMITTED} trail entry records previous and current state
-     * (Requirement 29.2). Items are locked from here on by every authoring path's DRAFT check.
-     */
     @Transactional
     public PurchaseRequestResponse submit(UUID purchaseRequestId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -285,29 +235,12 @@ public class PurchaseRequestService {
         return toDetailResponse(saved);
     }
 
-    /**
-     * Approves a submitted or under-review request (Requirement 8.5), recording the actor as
-     * reviewer, the decision instant as review timestamp and the supplied comments as review notes.
-     *
-     * <h4>Why SUBMITTED requests pass through UNDER_REVIEW</h4>
-     *
-     * <p>The transition table of Requirement 8.1 routes decisions through UNDER_REVIEW, but the API
-     * surface declares no separate "start review" endpoint, so a decision made on a freshly submitted
-     * request walks its first step internally: {@code SUBMITTED&rarr;UNDER_REVIEW} is asserted, then
-     * {@code UNDER_REVIEW&rarr;APPROVED}. Every pair exercised is one of the permitted pairs, and a
-     * request in any other state still fails the machine with its own 409 wording.
-     */
     @Transactional
     public PurchaseRequestResponse approve(
             UUID purchaseRequestId, PurchaseRequestReviewRequest request) {
         return decide(purchaseRequestId, request, PurchaseRequestStatus.APPROVED);
     }
 
-    /**
-     * Rejects a submitted or under-review request with a mandatory reason (Requirements 8.6, 8.7):
-     * the reason becomes the review notes and the requester is notified. A blank reason counts as no
-     * reason, so whitespace cannot satisfy Requirement 8.6.
-     */
     @Transactional
     public PurchaseRequestResponse reject(
             UUID purchaseRequestId, PurchaseRequestReviewRequest request) {
@@ -363,17 +296,11 @@ public class PurchaseRequestService {
         return toDetailResponse(saved);
     }
 
-    /** Asserts one machine step and answers the target, keeping call sites flat. */
     private PurchaseRequestStatus transition(PurchaseRequestStatus from, PurchaseRequestStatus to) {
         PurchaseRequestStatusTransitions.MACHINE.assertTransition(from, to);
         return to;
     }
 
-    /**
-     * Returns one request with its items, review data and derived RFQ identifiers
-     * (Requirement 8.9). Requester-only callers are narrowed to their own requests by
-     * {@link PurchaseRequestAccess}; any other identifier is 404.
-     */
     @Transactional(readOnly = true)
     public PurchaseRequestResponse get(UUID purchaseRequestId) {
         PurchaseRequest purchaseRequest = findVisible(
@@ -381,14 +308,6 @@ public class PurchaseRequestService {
         return toDetailResponse(purchaseRequest);
     }
 
-    /**
-     * A page of the caller's organization's requests, narrowed by the optional filters.
-     *
-     * <p>Paging defaults, the size clamp and the sort allowlist belong to {@code PageSupport}, used
-     * by the controller with {@link #SORTABLE}. A page costs five queries whatever its size - content,
-     * count, items, RFQ identifiers, reviewer names - because all three projections are batched for
-     * the whole page rather than read per row (Requirement 31.2).
-     */
     @Transactional(readOnly = true)
     public PageResponse<PurchaseRequestResponse> search(
             PurchaseRequestSearchCriteria criteria, Pageable pageable) {
@@ -420,11 +339,6 @@ public class PurchaseRequestService {
 
     // ----- helpers -----
 
-    /**
-     * Loads a request within the caller's organization and applies the visibility rule. Every path in
-     * this service enters through here, so no endpoint can bypass either tenant scope or the
-     * requester-only narrowing (Requirements 30.10, 8.9).
-     */
     private PurchaseRequest findVisible(UUID purchaseRequestId, UUID organizationId) {
         PurchaseRequest purchaseRequest = purchaseRequestRepository
                 .findByIdAndOrganizationId(purchaseRequestId, organizationId)
@@ -433,7 +347,6 @@ public class PurchaseRequestService {
         return purchaseRequest;
     }
 
-    /** {@link #findVisible} plus the DRAFT-only authoring gate of Requirements 7.3 and 8.3. */
     private PurchaseRequest findVisibleDraft(UUID purchaseRequestId, UUID organizationId) {
         PurchaseRequest purchaseRequest = findVisible(purchaseRequestId, organizationId);
         if (purchaseRequest.getStatus() != PurchaseRequestStatus.DRAFT) {
@@ -442,7 +355,6 @@ public class PurchaseRequestService {
         return purchaseRequest;
     }
 
-    /** Reviewers of a page resolved in one query; nulls are skipped rather than queried. */
     private Map<UUID, User> reviewersOf(List<PurchaseRequest> requests) {
         List<UUID> reviewerIds = requests.stream()
                 .map(PurchaseRequest::getReviewedBy)
@@ -457,7 +369,6 @@ public class PurchaseRequestService {
                 .collect(Collectors.toMap(User::getId, user -> user));
     }
 
-    /** Display name of a reviewer: given and family name joined, tolerating absent parts. */
     private String reviewerName(User reviewer) {
         if (reviewer == null) {
             return null;
@@ -466,11 +377,6 @@ public class PurchaseRequestService {
         return name.isEmpty() ? reviewer.getEmail() : name;
     }
 
-    /**
-     * The detail projection of one request: items in authoring order, the identifiers of RFQs sourced
-     * from it (native read over the V1 table; see {@code PurchaseRequestRepository}) and the
-     * reviewer's display name when a decision has been recorded (Requirement 8.9).
-     */
     private PurchaseRequestResponse toDetailResponse(PurchaseRequest purchaseRequest) {
         List<PurchaseRequestResponse.PurchaseRequestItemResponse> items = purchaseRequestItemRepository
                 .findByPurchaseRequestIdOrderBySortOrderAscIdAsc(purchaseRequest.getId())

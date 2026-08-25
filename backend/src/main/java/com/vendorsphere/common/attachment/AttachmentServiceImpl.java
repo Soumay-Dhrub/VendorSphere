@@ -103,21 +103,12 @@ public class AttachmentServiceImpl implements AttachmentService {
         storage.delete(storageReference);
     }
 
-    /**
-     * Tenant-scoped lookup. An unknown identifier and one belonging to another organization are
-     * indistinguishable, both surfacing as 404 (Requirement 30.10).
-     */
     private Attachment findInOrganization(UUID attachmentId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
         return attachmentRepository.findByIdAndOrganizationId(attachmentId, organizationId)
                 .orElseThrow(() -> new BusinessException(NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * Delegates the owner-record access check to the policy contributed by the owning module
-     * (Requirement 33.6). Until a module registers one, tenant scoping is the only gate, which is
-     * why every lookup above is keyed on the actor's organization.
-     */
     private void assertOwnerAccessible(AttachmentOwnerType ownerType, UUID ownerId) {
         policyFor(ownerType).ifPresent(policy -> policy.assertAccessible(ownerId));
     }
@@ -134,7 +125,6 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
     }
 
-    /** Requirements 33.2 and 33.3. */
     private String assertAcceptedContentType(MultipartFile file) {
         String declared = file.getContentType();
         String normalized = declared == null
@@ -150,7 +140,6 @@ public class AttachmentServiceImpl implements AttachmentService {
         return normalized;
     }
 
-    /** Requirement 33.4: exactly {@link #MAX_BYTE_SIZE} is accepted, one byte more is not. */
     private void assertWithinSizeLimit(MultipartFile file) {
         if (file.getSize() > MAX_BYTE_SIZE) {
             throw new BusinessException(SIZE_LIMIT_MESSAGE, HttpStatus.PAYLOAD_TOO_LARGE);

@@ -23,22 +23,8 @@ import net.jqwik.api.GenerationMode;
 import net.jqwik.api.Property;
 import org.springframework.http.HttpStatus;
 
-/**
- * Property-based checks that each of the five lifecycle machines accepts exactly the transitions
- * its acceptance criterion lists, and refuses every other ordered pair with HTTP 409.
- *
- * <p>The expected edge sets below are transcribed by hand from the acceptance criteria text of
- * requirements 3.1, 8.1, 11.1, 19.1 and 24.1. They are deliberately <em>not</em> derived from the
- * production transition tables or from {@code targetsFrom}, because a machine compared against
- * itself would assert nothing.
- *
- * <p>Every enum here has 5 to 7 values, so generation is exhaustive: each property visits every
- * ordered pair {@code (from, to)} of its enum, including self-transitions such as
- * {@code (ACTIVE, ACTIVE)}, which no criterion lists and which must therefore all be refused.
- */
 class StateMachineTransitionProperties {
 
-    /** Requirement 3.1, transcribed verbatim: ten permitted vendor status pairs. */
     private static final Set<Map.Entry<VendorStatus, VendorStatus>> VENDOR_EDGES =
             Set.of(
                     entry(VendorStatus.PROSPECTIVE, VendorStatus.ACTIVE),
@@ -52,7 +38,6 @@ class StateMachineTransitionProperties {
                     entry(VendorStatus.BLACKLISTED, VendorStatus.INACTIVE),
                     entry(VendorStatus.INACTIVE, VendorStatus.ACTIVE));
 
-    /** Requirement 8.1, transcribed verbatim: six permitted purchase request status pairs. */
     private static final Set<Map.Entry<PurchaseRequestStatus, PurchaseRequestStatus>>
             PURCHASE_REQUEST_EDGES =
                     Set.of(
@@ -73,7 +58,6 @@ class StateMachineTransitionProperties {
                                     PurchaseRequestStatus.PROCUREMENT_STARTED,
                                     PurchaseRequestStatus.COMPLETED));
 
-    /** Requirement 11.1, transcribed verbatim: eight permitted RFQ status pairs. */
     private static final Set<Map.Entry<RfqStatus, RfqStatus>> RFQ_EDGES =
             Set.of(
                     entry(RfqStatus.DRAFT, RfqStatus.OPEN),
@@ -85,7 +69,6 @@ class StateMachineTransitionProperties {
                     entry(RfqStatus.CLOSED, RfqStatus.CANCELLED),
                     entry(RfqStatus.EVALUATION, RfqStatus.CANCELLED));
 
-    /** Requirement 19.1, transcribed verbatim: eleven permitted purchase order status pairs. */
     private static final Set<Map.Entry<PurchaseOrderStatus, PurchaseOrderStatus>>
             PURCHASE_ORDER_EDGES =
                     Set.of(
@@ -109,7 +92,6 @@ class StateMachineTransitionProperties {
                                     PurchaseOrderStatus.PARTIALLY_DELIVERED,
                                     PurchaseOrderStatus.CANCELLED));
 
-    /** Requirement 24.1, transcribed verbatim: twelve permitted invoice status pairs. */
     private static final Set<Map.Entry<InvoiceStatus, InvoiceStatus>> INVOICE_EDGES =
             Set.of(
                     entry(InvoiceStatus.SUBMITTED, InvoiceStatus.UNDER_REVIEW),
@@ -176,11 +158,6 @@ class StateMachineTransitionProperties {
         assertAgreesWithRequirement(InvoiceStatusTransitions.MACHINE, INVOICE_EDGES, from, to);
     }
 
-    /**
-     * Both halves of the iff for one ordered pair: {@code permits} agrees with the transcribed
-     * requirement edge set, and {@code assertTransition} is silent exactly when the pair is listed
-     * and otherwise raises a 409 naming both states.
-     */
     private static <S extends Enum<S>> void assertAgreesWithRequirement(
             StateMachine<S> machine, Set<Map.Entry<S, S>> listedEdges, S from, S to) {
 

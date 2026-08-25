@@ -19,10 +19,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 
-/**
- * Storage-reference behaviour of {@link FilesystemAttachmentStorage} (Requirement 33.5). Every
- * write lands under a JUnit-managed temporary directory, which JUnit removes after each test.
- */
 class FilesystemAttachmentStorageTest {
 
     @TempDir

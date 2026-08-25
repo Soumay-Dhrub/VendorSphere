@@ -26,18 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Payment recording and outstanding payables (Requirement 25).
- *
- * <p>Recording and the invoice status derivation share one transaction (Requirement 25.11): a payment
- * lands with status PAID (Requirement 25.1), the paid amount is the scale-2 sum of PAID payments
- * (Requirement 25.5), and the invoice moves to PARTIALLY_PAID or PAID as those figures dictate
- * (Requirements 25.6, 25.7).
- */
 @Service
 public class PaymentService {
 
-    /** Pinned by Requirement 25.3. */
     static final String AMOUNT_MESSAGE = "Payment amount must be greater than zero";
 
     static final String NOT_FOUND_MESSAGE = "Invoice not found";
@@ -65,12 +56,6 @@ public class PaymentService {
         this.clock = clock;
     }
 
-    /**
-     * Records one payment against an APPROVED, PARTIALLY_PAID or OVERDUE invoice: any other status is
-     * refused with a message naming it (Requirement 25.8), an over-payment is refused with both
-     * figures named (Requirement 25.4), and the invoice's paid amount and status are rederived from
-     * every PAID payment afterwards.
-     */
     @Transactional
     public void record(UUID invoiceId, com.vendorsphere.payment.dto.PaymentRecordRequest request) {
         Invoice invoice = invoiceRepository.findByIdAndOrganizationId(
@@ -125,16 +110,11 @@ public class PaymentService {
                 null, request.amount().toPlainString());
     }
 
-    /** Requirement 20.6-style wording naming both figures. */
     static String overPaymentMessage(Invoice invoice, BigDecimal cumulative) {
         return "Payment would exceed the invoice total of " + invoice.getTotalAmount()
                 + "; cumulative paid would be " + cumulative;
     }
 
-    /**
-     * Outstanding payables of Requirement 25.10: the total across billable invoices plus the same sum
-     * grouped by vendor.
-     */
     @Transactional(readOnly = true)
     public com.vendorsphere.payment.dto.OutstandingResponse outstanding() {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();

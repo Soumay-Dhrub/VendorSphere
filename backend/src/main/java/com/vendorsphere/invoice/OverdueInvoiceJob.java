@@ -9,10 +9,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Daily overdue-invoice evaluation at 01:15 UTC (Requirement 24.10): unpaid invoices past their due
- * date move to OVERDUE (Requirement 24.9).
- */
 @Component
 public class OverdueInvoiceJob {
 

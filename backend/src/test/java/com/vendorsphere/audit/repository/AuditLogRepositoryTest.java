@@ -18,15 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Exercises the audit trail against PostgreSQL, because two things here are database behaviour that
- * a mock cannot show: the {@code JSONB} binding of the previous and new state, and the filtered,
- * tenant-scoped read (Requirements 29.1, 29.3 through 29.6).
- *
- * <p>Every test is transactional, so it rolls back on the shared database and the tenant-scoped
- * assertions stay exact: each organization is freshly generated, so the audit rows counted below can
- * only be the ones the test inserted.
- */
 class AuditLogRepositoryTest extends AbstractIntegrationTest {
 
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "createdAt");

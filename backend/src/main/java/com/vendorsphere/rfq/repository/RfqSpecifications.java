@@ -10,10 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * The predicate side of the RFQ listing (Requirement 31.1). The organization predicate is added first
- * and unconditionally; criteria contribute optional conjunctive filters only.
- */
 public final class RfqSpecifications {
 
     private RfqSpecifications() {

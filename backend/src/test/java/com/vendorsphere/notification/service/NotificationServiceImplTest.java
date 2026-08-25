@@ -34,11 +34,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/**
- * Rules that depend on collaborators: ownership scoping, the default order, the unread filter and the
- * two fan-outs. The dedupe behaviour itself is database behaviour and is exercised against PostgreSQL
- * in {@code NotificationCreateOnceIntegrationTest}.
- */
 class NotificationServiceImplTest {
 
     private static final String ENTITY_TYPE = "PURCHASE_REQUEST";
@@ -74,7 +69,6 @@ class NotificationServiceImplTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirement 28.6. */
     @Test
     void markingAnotherUsersNotificationReadIsNotFound() {
         UUID foreignNotificationId = UUID.randomUUID();
@@ -90,7 +84,6 @@ class NotificationServiceImplTest {
         verify(notificationRepository, never()).save(any());
     }
 
-    /** Requirement 28.5. */
     @Test
     void markingOwnNotificationSetsTheReadFlag() {
         Notification notification = new Notification();
@@ -104,7 +97,6 @@ class NotificationServiceImplTest {
         verify(notificationRepository).save(notification);
     }
 
-    /** Requirement 28.7: the whole set is updated in one statement, keyed on the caller. */
     @Test
     void markAllReadTargetsTheCallersNotificationsOnly() {
         service.markAllRead();
@@ -112,7 +104,6 @@ class NotificationServiceImplTest {
         verify(notificationRepository).markAllReadForUser(callerId);
     }
 
-    /** Requirement 28.8. */
     @Test
     void unreadCountCountsTheCallersUnreadNotifications() {
         when(notificationRepository.countByUserIdAndReadFalse(callerId)).thenReturn(4L);
@@ -120,7 +111,6 @@ class NotificationServiceImplTest {
         assertThat(service.unreadCount()).isEqualTo(4L);
     }
 
-    /** Requirement 28.3: creation instant descending applies when the caller supplies no sort. */
     @Test
     void listDefaultsToNewestFirstAndReadsOnlyTheCallersNotifications() {
         Page<Notification> empty = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
@@ -146,7 +136,6 @@ class NotificationServiceImplTest {
         assertThat(pageable.getValue().getSort()).isEqualTo(explicit);
     }
 
-    /** Requirement 28.4. */
     @Test
     void listWithTheUnreadFilterReadsOnlyUnreadNotifications() {
         Page<Notification> empty = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
@@ -159,7 +148,6 @@ class NotificationServiceImplTest {
         verify(notificationRepository, never()).findByUserId(any(), any());
     }
 
-    /** Requirement 28.2: role fan-out reaches every holder of the role in the organization. */
     @Test
     void roleFanOutWritesOneNotificationPerRoleMember() {
         UUID firstManager = UUID.randomUUID();
@@ -181,7 +169,6 @@ class NotificationServiceImplTest {
                 "PR-2026-001 submitted", "A purchase request awaits review");
     }
 
-    /** Requirement 28.2: vendor fan-out resolves recipients through {@code vendors.user_id}. */
     @Test
     void vendorFanOutWritesOneNotificationPerLinkedVendorUser() {
         UUID vendorId = UUID.randomUUID();

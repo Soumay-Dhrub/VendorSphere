@@ -20,18 +20,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/**
- * One purchase requirement raised by a department (Requirement 7.1).
- *
- * <p>{@code purchase_requests} carries {@code created_at} and {@code updated_at}, so this entity
- * extends {@link BaseEntity}. {@code version} maps the optimistic-lock column added by V2, so a
- * concurrent review decision or edit surfaces as 409 through the global exception handler
- * (Requirement 32.3).
- *
- * <p>Items are deliberately not mapped as a collection: they are read through their own repository,
- * batched per page, so neither a detail read nor a listing fans out one query per row - the same
- * rule {@code Vendor} applies to its contacts and documents.
- */
 @Entity
 @Table(name = "purchase_requests")
 public class PurchaseRequest extends BaseEntity {
@@ -40,7 +28,6 @@ public class PurchaseRequest extends BaseEntity {
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
 
-    /** The actor who authored the request; never reassigned afterwards (Requirement 7.1). */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
@@ -72,7 +59,6 @@ public class PurchaseRequest extends BaseEntity {
     @Column(nullable = false, length = 30)
     private PurchaseRequestStatus status = PurchaseRequestStatus.DRAFT;
 
-    /** The reviewer who approved or rejected the request; null while unreviewed. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by")
     private User reviewedBy;
@@ -80,10 +66,6 @@ public class PurchaseRequest extends BaseEntity {
     @Column(name = "reviewed_at")
     private Instant reviewedAt;
 
-    /**
-     * The reviewer's comments on approval, or the rejection reason on rejection; null while
-     * unreviewed (Requirements 8.5, 8.7).
-     */
     @Column(name = "review_notes", columnDefinition = "TEXT")
     private String reviewNotes;
 

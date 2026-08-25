@@ -24,10 +24,8 @@ import java.util.UUID;
 @Service
 public class NotificationServiceImpl implements NotificationService {
 
-    /** Requirement 28.6: pinned verbatim. */
     static final String NOT_FOUND_MESSAGE = "Notification not found";
 
-    /** Requirement 28.3: newest first, applied whenever the caller supplies no sort. */
     static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "createdAt");
 
     private final NotificationRepository notificationRepository;
@@ -44,12 +42,6 @@ public class NotificationServiceImpl implements NotificationService {
         this.vendorUserDirectory = vendorUserDirectory;
     }
 
-    /**
-     * No {@code propagation} override on purpose: the write joins the caller's business transaction,
-     * so a rolled-back business change takes its notifications with it. That only works because the
-     * insert resolves duplicates inside the statement and therefore cannot mark the transaction
-     * rollback-only - see {@code NotificationInsertImpl}.
-     */
     @Override
     @Transactional
     public void createOnce(UUID recipientId, NotificationEvent event, String entityType, UUID entityId,
@@ -128,11 +120,6 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    /**
-     * Requirement 28.3: creation instant descending is the default order. A caller that supplies its
-     * own sort keeps it; a caller that supplies none, including any internal caller passing a bare
-     * {@code PageRequest}, still gets newest first.
-     */
     private Pageable newestFirstWhenUnsorted(Pageable pageable) {
         if (pageable == null) {
             return PageRequest.of(PageSupport.DEFAULT_PAGE, PageSupport.DEFAULT_SIZE, NEWEST_FIRST);

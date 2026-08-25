@@ -18,14 +18,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
-/**
- * Local filesystem store for the MVP scope (Requirement 33.7).
- *
- * <p>A file is written as {@code {baseDirectory}/{randomUuid}} and the storage reference is that
- * UUID in text form. The original file name plays no part in path resolution, and every reference
- * is parsed as a UUID before it touches the filesystem, so an attacker-controlled name or a
- * tampered reference cannot escape the base directory (Requirement 33.5).
- */
 @Component
 public class FilesystemAttachmentStorage implements AttachmentStorage {
 
@@ -73,10 +65,6 @@ public class FilesystemAttachmentStorage implements AttachmentStorage {
         }
     }
 
-    /**
-     * Resolves a storage reference against the base directory. The reference must be a UUID, which
-     * rules out separators, {@code ..} segments and absolute paths by construction.
-     */
     private Path resolve(String storageReference) {
         UUID key;
         try {

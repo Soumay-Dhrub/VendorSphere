@@ -30,26 +30,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Requirement 28.9 under genuine contention: two callers writing the same notification key at the
- * same time on separate connections leave exactly one row behind, and neither caller fails.
- *
- * <p>This is the case the same-transaction test in {@code NotificationCreateOnceIntegrationTest}
- * cannot reach. There the two calls share one transaction, so the second insert conflicts with a row
- * its own transaction wrote. Here the conflicting rows are written by transactions that cannot see
- * each other, which is the situation a read-then-write dedupe would get wrong: both callers would
- * find the notification absent and both would insert.
- *
- * <p>Nothing in this class is {@code @Transactional}. Each thread runs its own
- * {@link TransactionTemplate} call, so it gets its own transaction on its own JDBC connection, and a
- * {@link CyclicBarrier} holds the threads until both are ready so the inserts really do overlap. The
- * recipient is created in a committed transaction beforehand, because the concurrent transactions
- * have to be able to see it.
- *
- * <p>Each thread also writes a second notification for a key of its own after the contended one. That
- * write is the poisoning check: if the conflict had escaped as a constraint violation, PostgreSQL
- * would have aborted the losing transaction and this follow-up write could not commit.
- */
 @SpringBootTest
 @ActiveProfiles("test")
 @Testcontainers
@@ -62,7 +42,6 @@ class NotificationCreateOnceConcurrencyIntegrationTest {
     private static final String ENTITY_TYPE = "PURCHASE_REQUEST";
     private static final NotificationEvent EVENT = NotificationEvent.PURCHASE_REQUEST_SUBMITTED;
 
-    /** Kept well below the default HikariCP maximum pool size so every thread can hold a connection. */
     private static final int THREADS = 4;
 
     @Autowired
@@ -113,10 +92,6 @@ class NotificationCreateOnceConcurrencyIntegrationTest {
         assertNoTransactionWasPoisoned(privateEntityIds);
     }
 
-    /**
-     * The same guarantee with more contenders, so the outcome does not depend on a single loser
-     * queueing behind a single winner.
-     */
     @Test
     void manyConcurrentCreateOnceCallsForOneKeyStillLeaveExactlyOneRow() throws Exception {
         UUID contendedEntityId = UUID.randomUUID();
@@ -128,12 +103,6 @@ class NotificationCreateOnceConcurrencyIntegrationTest {
         assertNoTransactionWasPoisoned(privateEntityIds);
     }
 
-    /**
-     * Runs {@code threads} {@code createOnce} calls for {@code contendedEntityId} simultaneously, each
-     * in its own transaction, and returns the per-thread entity identifiers whose notifications were
-     * written after the contended one. A thread that throws surfaces as a failed {@link Future}, so
-     * "no caller fails" is asserted by this method returning at all.
-     */
     private List<UUID> createOnceConcurrently(int threads, UUID contendedEntityId) throws Exception {
         CyclicBarrier startTogether = new CyclicBarrier(threads);
         ExecutorService pool = Executors.newFixedThreadPool(threads);
@@ -163,7 +132,6 @@ class NotificationCreateOnceConcurrencyIntegrationTest {
         }
     }
 
-    /** Whichever caller won, the surviving row is a complete unread notification of that caller's. */
     private void assertOnlyRowIsUntouched(UUID contendedEntityId) {
         Notification survivor = notificationsFor(contendedEntityId).getFirst();
         assertThat(survivor.getTitle()).startsWith("Contended title ");
@@ -173,7 +141,6 @@ class NotificationCreateOnceConcurrencyIntegrationTest {
         assertThat(survivor.getCreatedAt()).isNotNull();
     }
 
-    /** Every thread's follow-up write committed, so no thread's transaction was aborted. */
     private void assertNoTransactionWasPoisoned(List<UUID> privateEntityIds) {
         assertThat(privateEntityIds).doesNotHaveDuplicates();
         for (UUID privateEntityId : privateEntityIds) {

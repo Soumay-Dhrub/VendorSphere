@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** Goods receipt payload (Requirement 20): one entry per received purchase order line. */
 public record DeliveryRecordRequest(
         @NotNull LocalDate deliveryDate,
         String notes,

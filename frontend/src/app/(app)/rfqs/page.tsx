@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * The RFQ list screen (Requirement 35.4): every RFQ of the organization with its
- * bidding window and lifecycle state; vendor users see their invited RFQs instead.
- */
-
 import { useState } from "react";
 import { useRfqs } from "@/lib/hooks/rfqs";
 import type { RfqStatus } from "@/lib/api/types";

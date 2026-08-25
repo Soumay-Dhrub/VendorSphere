@@ -40,10 +40,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * The invitation rules of Requirement 10: the all-or-nothing batch validation, the notification
- * timing and the INVITED to VIEWED transition on first vendor read.
- */
 class RfqVendorServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-14T09:15:30Z");
@@ -85,7 +81,6 @@ class RfqVendorServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirements 10.2 and 10.1: an inactive vendor names company name and status in a 409... */
     @Test
     void invitingAnInactiveVendorNamesTheCompanyAndStatus() {
         Rfq open = storedRfq(RfqStatus.OPEN);
@@ -102,10 +97,6 @@ class RfqVendorServiceTest {
         verify(rfqVendorRepository, never()).save(any());
     }
 
-    /**
-     * Requirement 10.3 with the all-or-nothing rule of task 8.3: one already-invited vendor rejects
-     * the whole batch, so the healthy second vendor is not half-invited either.
-     */
     @Test
     void aBatchWithOneAlreadyInvitedVendorWritesNothing() {
         Rfq draft = storedRfq(RfqStatus.DRAFT);
@@ -124,7 +115,6 @@ class RfqVendorServiceTest {
         verify(rfqVendorRepository, never()).save(any());
     }
 
-    /** Requirement 10.4: invitations into an OPEN RFQ notify the vendor's linked users... */
     @Test
     void invitingIntoAnOpenRfqNotifiesTheVendorsUsers() {
         Rfq open = storedRfq(RfqStatus.OPEN);
@@ -139,7 +129,6 @@ class RfqVendorServiceTest {
                 eq(vendorId), any(), eq("Rfq"), eq(open.getId()), any(), any());
     }
 
-    /** ...while invitations collected during DRAFT stay silent until publication. */
     @Test
     void invitingIntoADraftRfqNotifiesNobody() {
         Rfq draft = storedRfq(RfqStatus.DRAFT);
@@ -152,7 +141,6 @@ class RfqVendorServiceTest {
                 any(), any());
     }
 
-    /** Requirement 10.5: the first vendor read moves INVITED to VIEWED; later reads do not regress. */
     @Test
     void firstVendorReadMarksTheInvitationViewed() {
         Rfq open = storedRfq(RfqStatus.OPEN);
@@ -167,7 +155,6 @@ class RfqVendorServiceTest {
         assertThat(invitation.getStatus()).isEqualTo(RfqVendorStatus.VIEWED);
     }
 
-    /** A DRAFT RFQ is invisible to its invited vendors (Requirement 10.7). */
     @Test
     void aDraftRfqIsInvisibleToInvitedVendors() {
         Rfq draft = storedRfq(RfqStatus.DRAFT);

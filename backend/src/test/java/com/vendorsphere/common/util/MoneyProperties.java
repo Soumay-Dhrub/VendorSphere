@@ -15,14 +15,6 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 
-/**
- * Property-based checks for {@link Money}, the single owner of monetary and quantity scale
- * and rounding.
- *
- * <p>Extends {@link MoneyArbitraries} so the shared named providers are resolvable by
- * {@code @ForAll("...")}, and adds one local provider for lists of values whose scale is not yet
- * normalized, which is what makes the "round once at the end" clause of the property observable.
- */
 class MoneyProperties extends MoneyArbitraries {
 
     private static final BigDecimal ZERO_MONEY = new BigDecimal("0.00");
@@ -81,11 +73,6 @@ class MoneyProperties extends MoneyArbitraries {
         assertThat(identity.compareTo(inRangeScore)).isZero();
     }
 
-    /**
-     * Money.sumMoney adds exactly and rounds once at the end, so the reference value is the exact
-     * sum normalized once, never a sum of per-element rounded values. Permutation invariance is
-     * asserted against a shuffled copy with compareTo at scale 2.
-     */
     private static void assertSumMoney(List<BigDecimal> values, long permutationSeed) {
         BigDecimal expected = values.stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add)

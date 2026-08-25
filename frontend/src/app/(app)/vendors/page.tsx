@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * The vendor list screen (Requirement 35.2): paged, searchable by company name and
- * filterable by status through the list API of Requirement 6. Rows link to the vendor
- * detail screen; statuses render as badges so lifecycle state is scannable.
- */
-
 import { useState } from "react";
 import Link from "next/link";
 import { useVendors } from "@/lib/hooks/vendors";

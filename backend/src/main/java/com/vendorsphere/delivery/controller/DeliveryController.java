@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-/** Delivery endpoints (Requirements 20, 21; API surface). */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Deliveries")

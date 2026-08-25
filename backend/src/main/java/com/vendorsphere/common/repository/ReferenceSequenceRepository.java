@@ -6,10 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Repository over {@code reference_sequences}. The counter increment itself lives in
- * {@link ReferenceSequenceAllocation} because it needs the value returned by the statement.
- */
 public interface ReferenceSequenceRepository
         extends JpaRepository<ReferenceSequence, UUID>, ReferenceSequenceAllocation {
 

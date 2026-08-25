@@ -28,10 +28,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/**
- * The pinned 409 of Requirement 4.5, the delete guard wording of Requirement 4.6 and the 404 a
- * cross-tenant category identifier produces.
- */
 class VendorCategoryServiceTest {
 
     private final VendorCategoryRepository vendorCategoryRepository =
@@ -76,7 +72,6 @@ class VendorCategoryServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirement 4.4. */
     @Test
     void creationFilesTheCategoryUnderTheCallersOrganization() {
         VendorCategoryResponse response =
@@ -88,7 +83,6 @@ class VendorCategoryServiceTest {
         verify(organizationRepository).getReferenceById(organizationId);
     }
 
-    /** Requirement 4.5: uniqueness is per organization and case-insensitive. */
     @Test
     void creatingACategoryWhoseNameIsAlreadyHeldIsRejectedWithThePinnedMessage() {
         when(vendorCategoryRepository.existsByOrganizationIdAndNameIgnoreCase(
@@ -103,10 +97,6 @@ class VendorCategoryServiceTest {
         verify(vendorCategoryRepository, never()).saveAndFlush(any());
     }
 
-    /**
-     * The {@code UNIQUE (organization_id, name)} constraint from V1 backs the pre-check for the
-     * read-then-write race, and its violation must report the same pinned 409 rather than a 500.
-     */
     @Test
     void aUniqueConstraintViolationReportsTheSameConflictAsThePreCheck() {
         when(vendorCategoryRepository.saveAndFlush(any(VendorCategory.class)))
@@ -119,7 +109,6 @@ class VendorCategoryServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /** Renaming onto another category's name clashes; re-submitting its own name does not. */
     @Test
     void updateRejectsAnotherCategorysNameButAcceptsItsOwnInAnyCase() {
         VendorCategory existing = category("Hardware");
@@ -144,7 +133,6 @@ class VendorCategoryServiceTest {
                 .existsByOrganizationIdAndNameIgnoreCase(organizationId, "HARDWARE");
     }
 
-    /** Requirement 4.6: the refusal states how many vendors reference the category. */
     @Test
     void deletingACategoryReferencedByVendorsIsRejectedNamingTheCount() {
         VendorCategory existing = category("Hardware");
@@ -169,7 +157,6 @@ class VendorCategoryServiceTest {
         verify(vendorCategoryRepository, never()).delete(any());
     }
 
-    /** Requirement 4.6 only blocks referenced categories; an unused one is removed. */
     @Test
     void deletingAnUnreferencedCategoryRemovesIt() {
         VendorCategory existing = category("Hardware");
@@ -183,7 +170,6 @@ class VendorCategoryServiceTest {
         verify(vendorCategoryRepository).delete(existing);
     }
 
-    /** Requirement 30.10: a category of another tenant is not found, never forbidden. */
     @Test
     void aCategoryOfAnotherOrganizationIsNotFound() {
         UUID foreignCategoryId = UUID.randomUUID();

@@ -17,14 +17,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Vendor performance recalculation (Requirement 26.9): aggregates the raw counts, scores them with
- * {@link PerformanceCalculator}, upserts the current calendar month's snapshot and updates the
- * vendor's rating to score/20 (Requirement 26.11).
- *
- * <p>Recalculation is synchronous in the caller's transaction - the design accepts this at MVP scale
- * because the aggregates are single-vendor reads and no message broker is in scope.
- */
 @Service
 public class PerformanceEngine {
 
@@ -48,10 +40,6 @@ public class PerformanceEngine {
         this.clock = clock;
     }
 
-    /**
-     * Recalculates one vendor's metrics for the current calendar month. Safe to call on every
-     * triggering event; the snapshot upsert keeps repeated calls within a month idempotent.
-     */
     @Transactional
     public void recalculate(UUID vendorId) {
         Vendor vendor = vendorRepository.findById(vendorId).orElse(null);
@@ -112,7 +100,6 @@ public class PerformanceEngine {
         vendorRepository.save(vendor);
     }
 
-    /** The vendor's current overall score: latest snapshot, or the rating-derived figure. */
     @Transactional(readOnly = true)
     public BigDecimal currentScore(UUID vendorId) {
         return vendorRepository.findLatestPerformanceScore(vendorId)

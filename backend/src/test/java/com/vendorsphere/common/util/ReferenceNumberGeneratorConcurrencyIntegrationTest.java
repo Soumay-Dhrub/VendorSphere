@@ -30,23 +30,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Proves Requirement 1.6: concurrent allocations for the same organization, prefix and calendar year
- * receive distinct sequence values.
- *
- * <p>The concurrency here is genuine rather than decorative. The test method carries no
- * {@code @Transactional} annotation, so no test-managed transaction wraps the work; each allocation
- * runs inside its own {@link TransactionTemplate} call on its own pool thread, which means its own
- * transaction on its own JDBC connection. A {@link CyclicBarrier} holds every thread until all of
- * them are ready, so the allocations contend on the counter row instead of arriving one after
- * another. Under those conditions the single {@code INSERT ... ON CONFLICT DO UPDATE ... RETURNING}
- * statement is what keeps the values distinct: the row lock is held for the whole statement, so
- * losers queue and read the value the winner already wrote.
- *
- * <p>Because nothing is rolled back for us, the organization is created in its own committed
- * transaction (the concurrent transactions have to be able to see it) and the rows are removed
- * afterwards so the test can run repeatedly.
- */
 @SpringBootTest
 @ActiveProfiles("test")
 @Testcontainers
@@ -61,7 +44,6 @@ class ReferenceNumberGeneratorConcurrencyIntegrationTest {
             Clock.fixed(Instant.parse("2026-03-04T10:15:30Z"), ZoneOffset.UTC);
     private static final ReferencePrefix PREFIX = ReferencePrefix.PO;
 
-    /** Kept below the default HikariCP maximum pool size so every thread can hold a connection. */
     private static final int HIGH_CONCURRENCY = 8;
 
     @Autowired
@@ -119,11 +101,6 @@ class ReferenceNumberGeneratorConcurrencyIntegrationTest {
         assertThat(counterValue()).isEqualTo(HIGH_CONCURRENCY);
     }
 
-    /**
-     * Runs {@code threads} allocations of the same key simultaneously, each on its own transaction,
-     * and returns the formatted references. An allocation that throws surfaces here as a failed
-     * {@link Future}, so the "every allocation succeeds" half of Requirement 1.6 fails the test.
-     */
     private List<String> allocateConcurrently(int threads) throws Exception {
         ReferenceNumberGenerator generator =
                 new DefaultReferenceNumberGenerator(sequenceRepository, CLOCK_2026);

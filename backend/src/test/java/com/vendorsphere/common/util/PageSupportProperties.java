@@ -15,29 +15,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 
-/**
- * Property-based checks for {@link PageSupport}, which owns the pagination defaults every list
- * endpoint relies on.
- *
- * <p>The generators deliberately straddle both outcomes of a sort request: field names drawn from
- * the same pool the whitelists are built from (so a generated name is sometimes whitelisted and
- * sometimes not), names that can never be whitelisted, and blank or absent values. The property
- * derives the expected outcome from the whitelist itself rather than branching on the generator,
- * and a coverage check keeps both branches genuinely exercised.
- *
- * <p>Direction is part of the generated input space but not of the property statement: the
- * requirements say nothing about direction handling, so an absent or unrecognized direction is
- * treated as ascending — the documented judgment call from the {@code PageSupport} implementation
- * task. {@link #expectedDirection} spells that rule out independently of the implementation.
- */
 class PageSupportProperties {
 
-    /** Field names whitelists are built from, so a generated sort value may or may not be allowed. */
     private static final List<String> FIELD_POOL = List.of(
             "companyName", "registeredAt", "rating", "status",
             "createdAt", "totalAmount", "invoiceNumber", "dueDate");
 
-    /** Field names no generated whitelist can contain, so these always have to be rejected. */
     private static final List<String> OUTSIDE_FIELDS = List.of(
             "password", "passwordHash", "secret", "organizationId", "1; DROP TABLE vendors");
 
@@ -106,11 +89,6 @@ class PageSupportProperties {
                 .allSatisfy(field -> assertThat(rejection.getMessage()).contains(field));
     }
 
-    /**
-     * Ascending unless the trimmed direction spells out {@code desc}. Absent, blank and
-     * unrecognized directions fall back to ascending rather than 400, because the requirements
-     * do not constrain direction handling.
-     */
     private static Sort.Direction expectedDirection(String direction) {
         if (direction == null) {
             return Sort.Direction.ASC;

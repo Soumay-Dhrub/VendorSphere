@@ -7,11 +7,6 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * Create payload for an RFQ raised from an approved purchase request (Requirement 9.1). The source
- * request must hold status APPROVED or PROCUREMENT_STARTED; anything else is a 409 naming the
- * current status (Requirement 9.2).
- */
 public record RfqCreateRequest(
         @NotNull UUID purchaseRequestId,
         @NotBlank @Size(max = 255) String title,

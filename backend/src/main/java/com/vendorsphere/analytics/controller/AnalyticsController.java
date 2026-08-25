@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Analytics endpoints (Requirement 27; API surface). */
 @RestController
 @RequestMapping("/api/v1/analytics")
 @Tag(name = "Analytics")

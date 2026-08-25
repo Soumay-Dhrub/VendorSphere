@@ -35,19 +35,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Purchase request endpoints (Requirements 7, 8, 30; API surface).
- *
- * <p>Authoring verbs are granted to the four authoring roles of Requirement 7.1 - REQUESTER,
- * PROCUREMENT_OFFICER, PROCUREMENT_MANAGER, ADMIN. Review verbs are granted to PROCUREMENT_MANAGER
- * and ADMIN only, so a REQUESTER-initiated approve or reject is answered 403 at this boundary
- * (Requirement 8.8) before any service code runs.
- *
- * <p>Within those grants, record-level narrowing happens in the service: a REQUESTER-only account
- * reads and authors only its own requests, and any other identifier answers 404
- * (Requirement 8.9). Attachments ride the shared attachment pipeline under the
- * {@code PURCHASE_REQUEST} owner type.
- */
 @RestController
 @RequestMapping("/api/v1/purchase-requests")
 @Tag(name = "Purchase Requests")
@@ -137,7 +124,6 @@ public class PurchaseRequestController {
         return ApiResponse.ok(purchaseRequestService.removeItem(id, itemId));
     }
 
-    /** Requirement 7.6: attachments while DRAFT, through the shared attachment pipeline. */
     @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'REQUESTER')")
     @ResponseStatus(HttpStatus.CREATED)
@@ -155,7 +141,6 @@ public class PurchaseRequestController {
         return ApiResponse.ok(purchaseRequestService.submit(id));
     }
 
-    /** Requirements 8.5 and 8.8: review is manager work; a requester here is 403 at this boundary. */
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_MANAGER')")
     @Operation(summary = "Approve a submitted purchase request")

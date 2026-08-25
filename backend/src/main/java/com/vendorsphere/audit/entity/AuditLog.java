@@ -17,24 +17,6 @@ import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
-/**
- * One append-only audit trail row (Requirement 29.1).
- *
- * <p>Rows are written and read, never updated or deleted: there is no setter-driven update path in
- * the service layer and {@link com.vendorsphere.audit.repository.AuditLogRepository} exposes no
- * delete operation (Requirement 29.8).
- *
- * <p>{@code organization} and {@code actor} are nullable because a state change can originate from
- * a scheduled job rather than an authenticated request, and the {@code audit_logs} columns are
- * nullable accordingly.
- *
- * <p>{@code previousValue} and {@code newValue} hold JSON text bound to the {@code JSONB} columns.
- * They are produced by {@link com.vendorsphere.audit.service.AuditPayloadSerializer}, which is the
- * only supported way to populate them because it applies the credential redaction pass.
- *
- * <p>The {@code audit_logs} table carries {@code created_at} but no {@code updated_at}, so this
- * entity extends {@link CreatedOnlyEntity}.
- */
 @Entity
 @Table(name = "audit_logs")
 public class AuditLog extends CreatedOnlyEntity {

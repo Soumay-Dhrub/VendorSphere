@@ -6,15 +6,6 @@ import com.vendorsphere.vendor.entity.Vendor;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-/**
- * The audited state of a vendor profile, used as the previous and new value of the
- * {@code VENDOR_CREATED} and {@code VENDOR_UPDATED} trail entries (Requirement 29.1).
- *
- * <p>A purpose-built record rather than the {@link Vendor} entity, because serializing an entity
- * would drag its lazy associations into the stored document. It also stays free of the derived
- * figures {@link VendorResponse} carries, so an audit row records only state the change actually
- * touched.
- */
 public record VendorProfileSnapshot(
         UUID id,
         String vendorCode,

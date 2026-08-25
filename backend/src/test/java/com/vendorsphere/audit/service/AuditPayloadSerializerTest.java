@@ -9,10 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-/**
- * Unit tests for the audit payload serializer, with the credential redaction pass as the main
- * subject: an audit row can never be edited, so a leaked secret in one is permanent.
- */
 class AuditPayloadSerializerTest {
 
     private final AuditPayloadSerializer serializer = new AuditPayloadSerializer();
@@ -99,7 +95,6 @@ class AuditPayloadSerializerTest {
     record AccountState(String email, String passwordHash) {
     }
 
-    /** Getter that raises, which is how a lazy association or a broken projection fails. */
     static final class Unserializable {
 
         @SuppressWarnings("unused")

@@ -14,19 +14,6 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/**
- * Compliance document metadata stored against a vendor (Requirement 5.1).
- *
- * <p>{@code vendor_documents} carries {@code created_at} but no {@code updated_at}, so this entity
- * extends {@link CreatedOnlyEntity}.
- *
- * <p>{@code document_type} is a plain {@code VARCHAR(100)} in V1 with no {@code CHECK} constraint;
- * the accepted-type allowlist of Requirement 5.2 is enforced in the service layer. The column is
- * mapped as {@link VendorDocumentType} regardless, so the type is a closed set in Java.
- *
- * <p>The expiry state of Requirement 5.4 is derived on read from {@code expiryDate} and is not
- * stored.
- */
 @Entity
 @Table(name = "vendor_documents")
 public class VendorDocument extends CreatedOnlyEntity {

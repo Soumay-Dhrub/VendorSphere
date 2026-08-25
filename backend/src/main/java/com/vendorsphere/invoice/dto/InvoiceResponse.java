@@ -41,7 +41,6 @@ public record InvoiceResponse(
     ) {
     }
 
-    /** Compact line shape used for duplicate-line comparison and match results. */
     public record ItemResponse2(UUID sourcePoItemId, BigDecimal quantity, BigDecimal unitPrice) {
     }
 

@@ -25,11 +25,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Page<User> findByOrganizationId(UUID organizationId, Pageable pageable);
 
-    /**
-     * Identifiers of the active users holding one role within one organization, used for the
-     * role-addressed notification fan-out of Requirement 28.2. Deactivated accounts are skipped
-     * because they cannot read what they are sent.
-     */
     @Query("""
            SELECT u.id FROM User u JOIN u.roles r
            WHERE u.organization.id = :organizationId AND r.name = :roleName AND u.active = true

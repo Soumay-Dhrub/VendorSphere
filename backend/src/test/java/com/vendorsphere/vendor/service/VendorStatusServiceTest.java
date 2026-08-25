@@ -35,11 +35,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/**
- * The reason rule of Requirement 3.4, the transition rejection of Requirement 3.2 and the audit
- * payload of Requirement 3.3. The transition table itself is exercised in {@code StateMachineTest}
- * and its properties.
- */
 class VendorStatusServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-14T09:15:30Z");
@@ -76,7 +71,6 @@ class VendorStatusServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirement 3.3: the new status and the reason are persisted. */
     @Test
     void aPermittedChangePersistsTheNewStatusAndTheReason() {
         Vendor vendor = storedVendor(VendorStatus.ACTIVE);
@@ -91,7 +85,6 @@ class VendorStatusServiceTest {
         verify(vendorRepository).save(vendor);
     }
 
-    /** Requirement 3.3: the trail entry carries previous status, new status and reason. */
     @Test
     void aPermittedChangeRecordsPreviousStatusNewStatusAndReasonOnTheAuditEntry() {
         Vendor vendor = storedVendor(VendorStatus.ACTIVE);
@@ -112,7 +105,6 @@ class VendorStatusServiceTest {
                 vendor.getId(), VendorStatus.BLACKLISTED, "Repeated quality failures"));
     }
 
-    /** Requirement 3.4: the three targets that demand a reason, with the pinned 400 message. */
     @ParameterizedTest
     @EnumSource(value = VendorStatus.class, names = {"SUSPENDED", "BLACKLISTED", "INACTIVE"})
     void aChangeToARestrictedStatusWithoutAReasonIsRejected(VendorStatus target) {
@@ -130,7 +122,6 @@ class VendorStatusServiceTest {
         verifyNoInteractions(auditService);
     }
 
-    /** Requirement 3.4: whitespace is not a reason. */
     @Test
     void aBlankReasonCountsAsNoReason() {
         Vendor vendor = storedVendor(VendorStatus.ACTIVE);
@@ -141,7 +132,6 @@ class VendorStatusServiceTest {
                 .hasMessage("Status change reason is required");
     }
 
-    /** Requirement 3.4 constrains only those three targets: ACTIVE needs no reason. */
     @Test
     void aChangeToActiveWithoutAReasonIsAccepted() {
         Vendor vendor = storedVendor(VendorStatus.SUSPENDED);
@@ -156,7 +146,6 @@ class VendorStatusServiceTest {
         assertThat(vendor.getStatusChangeReason()).isNull();
     }
 
-    /** Requirement 3.2: a pair outside the 3.1 table is 409, naming both statuses. */
     @Test
     void aTransitionOutsideThePermittedTableIsRejected() {
         Vendor vendor = storedVendor(VendorStatus.PROSPECTIVE);
@@ -173,10 +162,6 @@ class VendorStatusServiceTest {
         verifyNoInteractions(auditService);
     }
 
-    /**
-     * Requirement 3.2 outranks Requirement 3.4: a rejected transition is 409 even when the reason it
-     * would have needed is missing too.
-     */
     @Test
     void aRejectedTransitionIsReportedBeforeTheMissingReason() {
         Vendor vendor = storedVendor(VendorStatus.BLACKLISTED);
@@ -189,7 +174,6 @@ class VendorStatusServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /** Requirement 2.6: a cross-tenant or unknown identifier is not found, never forbidden. */
     @Test
     void changingTheStatusOfAVendorOfAnotherOrganizationIsNotFound() {
         UUID foreignVendorId = UUID.randomUUID();

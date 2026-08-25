@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-/** DRAFT-only header edit payload (Requirement 18.7). */
 public record PurchaseOrderUpdateRequest(
         @NotBlank @Size(max = 1000) String deliveryAddress,
         LocalDate expectedDelivery,

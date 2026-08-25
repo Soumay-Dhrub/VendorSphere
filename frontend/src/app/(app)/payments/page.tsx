@@ -1,6 +1,5 @@
 "use client";
 
-/** Payments list plus the outstanding payables summary (Requirement 35.8). */
 import { useOutstandingPayables, usePayments } from "@/lib/hooks/payments";
 import { formatMoney } from "@/lib/format";
 

@@ -37,20 +37,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Exercises the vendor listing of Requirement 6 against PostgreSQL, because what is under test is
- * the SQL a specification produces: a case-insensitive {@code LIKE}, an inclusive rating bound, the
- * conjunction of several filters (Requirement 6.6), the tenant predicate that no criteria value can
- * bypass, and ordering by each of the four sortable fields (Requirement 6.7).
- *
- * <p>Every test is transactional, so it rolls back on the shared database, and every fixture lives in
- * a freshly generated organization, so the assertions below are exact rather than deltas.
- *
- * <p>Company names are chosen so that the character which decides their order is upper case in both
- * spellings ({@code ACME Instruments} before {@code Acme Logistics} on {@code I} < {@code L}). The
- * expected ordering is therefore the same under a C and a locale-aware collation, and the sort
- * assertions do not depend on the container's default collation.
- */
 @Transactional
 class VendorSearchIntegrationTest extends AbstractIntegrationTest {
 
@@ -110,7 +96,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirements 6.1 and 31.1: a page of the caller's organization only, in the PageResponse shape. */
     @Test
     void listsEveryVendorOfTheCallersOrganizationAndNoVendorOfAnother() {
         PageResponse<VendorResponse> page = search(VendorSearchCriteria.none(), pageable(null, null));
@@ -130,7 +115,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
                 .containsExactly("Hardware", "Logistics", "Hardware", "Hardware");
     }
 
-    /** Requirement 6.2. */
     @Test
     void companyNameFilterMatchesACaseInsensitiveSubstring() {
         assertThat(names(search(criteria("acme", null, null, null), pageable(null, null))))
@@ -146,7 +130,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
         assertThat(names(search(criteria("Acme_", null, null, null), pageable(null, null)))).isEmpty();
     }
 
-    /** Requirements 6.3, 6.4 and 6.5, each filter on its own. */
     @Test
     void categoryStatusAndMinimumRatingFilterIndependently() {
         assertThat(names(search(criteria(null, hardware.getId(), null, null), pageable(null, null))))
@@ -162,7 +145,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
                 .isEmpty();
     }
 
-    /** Requirement 6.6: supplied filters combine, so a vendor must satisfy every one of them. */
     @Test
     void combinedFiltersReturnOnlyVendorsSatisfyingEveryFilter() {
         VendorSearchCriteria allFour =
@@ -189,7 +171,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
                 .isEmpty();
     }
 
-    /** Requirement 30.10: no combination of criteria values reaches another organization's vendors. */
     @Test
     void theOrganizationRestrictionCannotBeBypassedByAnyCriteriaValue() {
         // Criteria that describe the foreign vendor exactly, including its own category identifier.
@@ -207,7 +188,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
                 foreignVendor.getId(), foreignOrganizationId)).isPresent();
     }
 
-    /** Requirement 6.7: all four fields sort, in both directions. */
     @Test
     void sortsByCompanyNameRegistrationTimestampRatingAndStatus() {
         assertThat(names(search(VendorSearchCriteria.none(), pageable("companyName", "ASC"))))
@@ -229,7 +209,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
                 .startsWith(VendorStatus.SUSPENDED);
     }
 
-    /** Requirement 31.1: the page metadata reflects the filtered total, not the whole table. */
     @Test
     void pagesTheFilteredResult() {
         PageResponse<VendorResponse> firstPage = search(criteria("acme", null, null, null),
@@ -248,11 +227,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
         assertThat(secondPage.last()).isTrue();
     }
 
-    /**
-     * Requirements 2.5 and 31.2: each row carries the same two derived figures a detail read carries,
-     * and both are read for the whole page at once. The snapshot pair proves the batch query resolves
-     * the latest snapshot per vendor exactly as the single-vendor query does.
-     */
     @Test
     void derivesThePerformanceScoreAndExpiringDocumentCountForEveryRowOfThePage() {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -285,7 +259,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
                         tuple("Beta Hardware", 0L));
     }
 
-    /** An empty page derives nothing and still reports the PageResponse shape. */
     @Test
     void anEmptyPageIsWellFormed() {
         PageResponse<VendorResponse> page =
@@ -370,10 +343,6 @@ class VendorSearchIntegrationTest extends AbstractIntegrationTest {
         vendorDocumentRepository.save(document);
     }
 
-    /**
-     * Inserts a performance snapshot with SQL, because {@code vendor_performance_snapshots} has no
-     * entity yet: its mapping belongs to the performance module, and the listing only reads one column.
-     */
     private void snapshot(Vendor vendor, LocalDate periodStart, LocalDate periodEnd, String overall) {
         entityManager.flush();
         jdbcTemplate.update("""

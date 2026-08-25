@@ -9,14 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * Writes the {@link ApiResponse} error envelope straight onto the response for failures raised on
- * the security filter chain, which never reach a {@code @ControllerAdvice}.
- *
- * <p>The {@link ObjectMapper} is the one Spring Boot configures for the application, so a filter
- * chain failure serializes its {@code timestamp} exactly the way {@code GlobalExceptionHandler}'s
- * responses do. Building a mapper here would drift from that the moment a Jackson property changes.
- */
 @Component
 public class ApiResponseErrorWriter {
 

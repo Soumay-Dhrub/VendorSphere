@@ -1,7 +1,5 @@
 "use client";
 
-/** Query and mutation hooks for purchase order generation and lifecycle. */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   acknowledgePurchaseOrder,
@@ -42,7 +40,6 @@ export function usePurchaseOrder(id: Uuid | undefined) {
   });
 }
 
-/** Generation copies the selected quotation into a DRAFT order (Req 18.1). */
 export function useGeneratePurchaseOrderFromRfq(rfqId: Uuid) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -64,7 +61,6 @@ export function useUpdatePurchaseOrder(id: Uuid) {
   });
 }
 
-/** Issuing notifies the vendor and feeds vendor performance (Req 19.2, 26.9). */
 export function useIssuePurchaseOrder(id: Uuid) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -89,7 +85,6 @@ export function useAcknowledgePurchaseOrder(id: Uuid) {
   });
 }
 
-/** Closing recalculates vendor performance (Requirements 19.8, 26.9). */
 export function useClosePurchaseOrder(id: Uuid) {
   const queryClient = useQueryClient();
   return useMutation({

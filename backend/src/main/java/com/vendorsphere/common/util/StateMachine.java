@@ -9,15 +9,6 @@ import java.util.Objects;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
 
-/**
- * Declarative lifecycle state machine. A machine holds an immutable table of permitted
- * {@code source -> targets} pairs and answers whether a transition is allowed.
- *
- * <p>This class is the single source of the HTTP 409 wording used for vendor, purchase request,
- * RFQ, purchase order and invoice status changes: {@code Cannot transition from X to Y}.
- *
- * @param <S> the lifecycle enum type
- */
 public final class StateMachine<S extends Enum<S>> {
 
     private final Map<S, Set<S>> transitions;
@@ -26,14 +17,6 @@ public final class StateMachine<S extends Enum<S>> {
         this.transitions = transitions;
     }
 
-    /**
-     * Builds a machine from the supplied transition table. The table and its target sets are
-     * defensively copied, so later mutation of the argument cannot affect the machine.
-     *
-     * @param transitions permitted targets keyed by source state; neither keys, value sets nor the
-     *     states they contain may be {@code null}
-     * @return an immutable state machine over the given table
-     */
     public static <S extends Enum<S>> StateMachine<S> of(Map<S, Set<S>> transitions) {
         Objects.requireNonNull(transitions, "transitions must not be null");
         Map<S, Set<S>> copy = null;
@@ -54,11 +37,6 @@ public final class StateMachine<S extends Enum<S>> {
                 copy == null ? Collections.emptyMap() : Collections.unmodifiableMap(copy));
     }
 
-    /**
-     * Answers whether this machine permits the transition.
-     *
-     * @return {@code true} only when {@code to} is listed as a target of {@code from}
-     */
     public boolean permits(S from, S to) {
         if (from == null || to == null) {
             return false;
@@ -66,11 +44,6 @@ public final class StateMachine<S extends Enum<S>> {
         return targetsFrom(from).contains(to);
     }
 
-    /**
-     * Permitted targets of the given source state.
-     *
-     * @return the targets of {@code from}, or an empty set when the state has no mapped targets
-     */
     public Set<S> targetsFrom(S from) {
         if (from == null) {
             return Collections.emptySet();
@@ -79,12 +52,6 @@ public final class StateMachine<S extends Enum<S>> {
         return targets == null ? Collections.emptySet() : targets;
     }
 
-    /**
-     * Asserts that the transition is permitted.
-     *
-     * @throws BusinessException with HTTP status 409 and the message
-     *     {@code Cannot transition from <from> to <to>} when the transition is not permitted
-     */
     public void assertTransition(S from, S to) {
         if (!permits(from, to)) {
             throw new BusinessException(

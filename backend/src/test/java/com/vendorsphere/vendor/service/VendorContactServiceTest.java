@@ -31,11 +31,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/**
- * The single-primary rule of Requirement 4.2, the ordering of Requirement 4.3 and the 404s a
- * cross-tenant or mismatched identifier produces. The ordering itself is the database's, so this only
- * asserts that the service asks for it rather than re-sorting in Java.
- */
 class VendorContactServiceTest {
 
     private final VendorContactRepository vendorContactRepository =
@@ -90,7 +85,6 @@ class VendorContactServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    /** Requirements 4.1, 4.2: a contact arriving as primary demotes the vendor's existing primary. */
     @Test
     void addingAPrimaryContactClearsTheFlagOnTheVendorsOtherContacts() {
         VendorContact incumbent = contact("Riya Nair", true);
@@ -113,10 +107,6 @@ class VendorContactServiceTest {
         verify(vendorContactRepository, never()).save(secondary);
     }
 
-    /**
-     * Requirement 4.2 is an at-most-one rule: it fires only when the flag arrives true, so a contact
-     * added without it leaves the vendor's existing primary alone and does not promote itself.
-     */
     @Test
     void addingANonPrimaryContactPromotesNothingAndDemotesNothing() {
         VendorContact incumbent = contact("Riya Nair", true);
@@ -133,7 +123,6 @@ class VendorContactServiceTest {
         verify(vendorContactRepository, never()).save(incumbent);
     }
 
-    /** Requirement 4.2 applies to updates as well as creations, and never demotes the winner. */
     @Test
     void promotingAnExistingContactDemotesTheOthersButNotItself() {
         VendorContact promoted = contact("Nisha Rao", false);
@@ -154,7 +143,6 @@ class VendorContactServiceTest {
         assertThat(incumbent.isPrimaryContact()).isFalse();
     }
 
-    /** Requirement 4.3: the ordering is the finder's, so the service must use that finder. */
     @Test
     void listReturnsTheContactsInPrimaryFirstThenNameAscendingOrder() {
         VendorContact primary = contact("Riya Nair", true);
@@ -170,7 +158,6 @@ class VendorContactServiceTest {
                 .containsExactly("Riya Nair", "Arun Mehta", "Nisha Rao");
     }
 
-    /** Requirement 2.6: a vendor of another tenant is not found, never forbidden. */
     @Test
     void contactsOfAVendorOfAnotherOrganizationAreNotFound() {
         UUID foreignVendorId = UUID.randomUUID();
@@ -191,7 +178,6 @@ class VendorContactServiceTest {
         verify(vendorContactRepository, never()).save(any());
     }
 
-    /** Both halves of {@code /vendors/{id}/contacts/{contactId}} must agree, or it is a 404. */
     @Test
     void aContactBelongingToAnotherVendorIsNotFound() {
         Vendor otherVendor = new Vendor();

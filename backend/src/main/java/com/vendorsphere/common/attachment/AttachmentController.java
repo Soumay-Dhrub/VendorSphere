@@ -16,14 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-/**
- * Serves stored files. Uploads are exposed by the owning module (vendor documents, purchase request
- * attachments, RFQ documents and so on), which knows the state rules that gate them.
- *
- * <p>The response body is the file itself rather than an {@code ApiResponse} envelope; a binary
- * download is the one boundary where wrapping is not applicable. Failures still leave through
- * {@code GlobalExceptionHandler} and carry the usual envelope.
- */
 @RestController
 @RequestMapping("/api/v1/attachments")
 @Tag(name = "Attachments")
@@ -35,11 +27,6 @@ public class AttachmentController {
         this.attachmentService = attachmentService;
     }
 
-    /**
-     * Requirement 33.6: authentication is required, and the service checks the actor's access to
-     * the owning record before any bytes are read. Roles are not fixed here because every role owns
-     * some attachment type; the data-level check is the meaningful one.
-     */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Download an attachment the caller may access")

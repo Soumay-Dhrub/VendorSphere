@@ -1,11 +1,3 @@
-/**
- * Delivery recording and delivery progress endpoints.
- *
- * Quantities are pre-scaled to three decimals by the server; the per-item
- * progress figures (received, damaged, rejected, outstanding) are derived
- * server-side from the receipts (Requirements 20.9, 21.1) and are never summed
- * on the client.
- */
 
 import { apiGet, apiGetPage, apiPost } from "./client";
 import type {
@@ -21,7 +13,7 @@ import type {
 
 export type DeliveryItemRequest = {
   purchaseOrderItemId: Uuid;
-  /** Must be greater than zero (Requirement 20.4). */
+
   receivedQuantity: Quantity;
   damagedQuantity?: Quantity;
   rejectedQuantity?: Quantity;
@@ -71,7 +63,6 @@ export type DeliveryListParams = PageParams & {
   to?: IsoDate;
 };
 
-/** Per purchase order item progress (Requirement 20.9). */
 export type ItemProgressResponse = {
   purchaseOrderItemId: Uuid;
   itemName: string;

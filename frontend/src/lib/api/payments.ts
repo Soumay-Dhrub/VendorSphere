@@ -1,10 +1,3 @@
-/**
- * Payment recording and outstanding payables endpoints.
- *
- * The invoice paid amount and derived status come back from the invoice
- * endpoints; this module only records payments and reads them (Requirements
- * 25.5–25.7), so payment hooks invalidate the invoice caches too.
- */
 
 import { apiGet, apiGetPage, apiPost } from "./client";
 import type {
@@ -18,7 +11,7 @@ import type {
 } from "./types";
 
 export type PaymentRequest = {
-  /** Must be greater than zero (Requirement 25.3). */
+
   amount: Money;
   paymentDate: IsoDate;
   paymentReference?: string | null;
@@ -58,7 +51,6 @@ export type OutstandingPayableVendor = {
   invoiceCount: number;
 };
 
-/** Organization total plus the per-vendor breakdown (Requirement 25.10). */
 export type OutstandingPayablesResponse = {
   totalOutstanding: Money;
   vendors: OutstandingPayableVendor[];

@@ -8,15 +8,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * A vendor profile together with the three figures Requirement 2.5 asks a detail read to carry: the
- * vendor category name, the current performance score and the count of documents whose expiry date
- * falls within 30 days of the request date.
- *
- * <p>{@code categoryId}, {@code categoryName} and the two derived values are all nullable-safe: a
- * vendor without a category reports {@code null} for both category fields, and both numeric values
- * are normalized at money scale so they serialize with exactly two decimals (Requirement 32.7).
- */
 public record VendorResponse(
         UUID id,
         String vendorCode,
@@ -36,13 +27,6 @@ public record VendorResponse(
         Instant createdAt
 ) {
 
-    /**
-     * Projects a vendor and its derived figures.
-     *
-     * <p>The caller supplies {@code performanceScore} and {@code expiringDocumentCount} because both
-     * are queried rather than mapped: keeping them as parameters stops this record from reaching
-     * into repositories.
-     */
     public static VendorResponse from(
             Vendor vendor,
             BigDecimal performanceScore,

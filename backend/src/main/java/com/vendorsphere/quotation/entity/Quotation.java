@@ -18,17 +18,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/**
- * A vendor's priced offer against one RFQ (Requirement 12).
- *
- * <p>{@code quotations} carries {@code created_at}/{@code updated_at}, so this entity extends
- * {@link BaseEntity}; {@code version} maps the V2 optimistic-lock column. Every monetary figure is
- * computed server-side by {@code QuotationCalculator} - the request payload carries none of them
- * (Requirement 13.6). Items are not mapped as a collection; they are read through their own
- * repository, batched where pages need them.
- *
- * <p>The table has no organization column: tenant scoping traverses {@code rfq.organization.id}.
- */
 @Entity
 @Table(name = "quotations")
 public class Quotation extends BaseEntity {
@@ -68,7 +57,6 @@ public class Quotation extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String warranty;
 
-    /** Warranty duration in months, backing the warranty score of Requirement 16.3. */
     @Column(name = "warranty_months")
     private Integer warrantyMonths;
 

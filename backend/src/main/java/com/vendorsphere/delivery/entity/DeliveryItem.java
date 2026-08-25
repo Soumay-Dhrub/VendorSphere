@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
-/** One received line of a goods receipt (Requirement 20.2). */
 @Entity
 @Table(name = "delivery_items")
 public class DeliveryItem extends CreatedOnlyEntity {

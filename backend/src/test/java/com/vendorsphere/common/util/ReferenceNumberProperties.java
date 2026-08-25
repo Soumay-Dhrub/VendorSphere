@@ -15,29 +15,11 @@ import net.jqwik.api.constraints.IntRange;
 import net.jqwik.api.constraints.Size;
 import net.jqwik.api.constraints.UniqueElements;
 
-/**
- * Property-based checks on the shape and ordering of generated reference numbers.
- *
- * <p>{@link ReferenceNumberFormatter} is the pure half of reference allocation: it turns an already
- * allocated sequence value into the printed reference. That lets the format rules of requirements
- * 1.1, 1.2 and 1.4 and the ordering rule of requirement 1.3 be checked with no database at all. The
- * database half — that concurrent allocations against one {@code (organization, prefix, year)} key
- * really do receive strictly increasing, distinct sequence values — is requirement 1.6 and is
- * covered by the concurrency integration test.
- *
- * <p>The expected shape is transcribed by hand from the acceptance criteria rather than read off the
- * formatter's own pattern constant, so the formatter is not being compared against itself.
- */
 class ReferenceNumberProperties {
 
-    /** Requirement 1.1 and 1.2, transcribed: prefix, four-digit year, at least three digits. */
     private static final Pattern REFERENCE =
             Pattern.compile("^(VEN|PR|RFQ|QUOT|PO|DEL)-\\d{4}-\\d{3,}$");
 
-    /**
-     * Years across the whole four-digit range, with the boundaries and the current business year
-     * given explicit weight so they appear in every run rather than only by chance.
-     */
     @Provide
     Arbitrary<Integer> years() {
         return Arbitraries.frequencyOf(
@@ -50,10 +32,6 @@ class ReferenceNumberProperties {
                                         ReferenceNumberFormatter.MAX_YEAR)));
     }
 
-    /**
-     * Sequence values from 1 upward, weighted towards the padding boundaries so the "grows past
-     * three digits rather than truncating" behaviour of requirement 1.4 is exercised on every run.
-     */
     @Provide
     Arbitrary<Integer> sequences() {
         return Arbitraries.frequencyOf(

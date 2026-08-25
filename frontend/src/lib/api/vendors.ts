@@ -1,11 +1,3 @@
-/**
- * Vendor, vendor contact, vendor document and vendor category endpoints.
- *
- * Paths follow the API surface of the design: `/vendors`, `/vendors/{id}/...`
- * and `/vendor-categories`, all relative to the `/api/v1` base URL of
- * `apiClient`. The vendor list is paged (Requirement 31.1); the child
- * collections are returned as ordered arrays.
- */
 
 import {
   apiDelete,
@@ -60,7 +52,6 @@ export type VendorResponse = {
   createdAt: IsoInstant;
 };
 
-/** Sortable fields of the vendor list (Requirement 6.7). */
 export type VendorSortField = "companyName" | "registeredAt" | "rating" | "status";
 
 export type VendorListParams = PageParams & {
@@ -70,7 +61,6 @@ export type VendorListParams = PageParams & {
   minRating?: number;
 };
 
-/** A reason is required for SUSPENDED, BLACKLISTED and INACTIVE (Req 3.4). */
 export type VendorStatusChangeRequest = {
   status: VendorStatus;
   reason?: string;
@@ -113,7 +103,6 @@ export type VendorDocumentResponse = {
   uploadedAt: IsoInstant;
 };
 
-/** The five metrics plus the derived score (Requirements 26.1–26.7, 17.9). */
 export type VendorPerformanceResponse = {
   vendorId: Uuid;
   deliveryScore: Decimal;

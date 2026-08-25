@@ -3,7 +3,6 @@
 import { ShieldAlert } from "lucide-react";
 import { useStoredUser } from "@/lib/hooks/auth";
 
-/** The six roles issued by the backend. */
 export const ROLES = [
   "ADMIN",
   "PROCUREMENT_MANAGER",
@@ -15,7 +14,6 @@ export const ROLES = [
 
 export type Role = (typeof ROLES)[number];
 
-/** True when the user holds at least one of the roles granted access to the screen. */
 export function hasAnyRole(userRoles: readonly string[], allowed: readonly Role[]): boolean {
   if (allowed.length === 0) {
     return true;
@@ -24,20 +22,13 @@ export function hasAnyRole(userRoles: readonly string[], allowed: readonly Role[
 }
 
 export type RoleGuardProps = {
-  /** Roles granted access to the guarded content under Requirement 30. */
+
   allow: readonly Role[];
   children: React.ReactNode;
-  /**
-   * Overrides the roles of the signed-in user. Left unset in application code, where the
-   * roles come from the authenticated user held by `src/lib/api.ts`.
-   */
+
   roles?: readonly string[];
 };
 
-/**
- * Renders `children` only for users whose roles include one of `allow`, and an access
- * denied message in place of the content otherwise (Requirement 35.12).
- */
 export function RoleGuard({ allow, children, roles }: RoleGuardProps) {
   const storedRoles = useStoredRoles();
   const effectiveRoles = roles ?? storedRoles;
@@ -57,7 +48,6 @@ export function RoleGuard({ allow, children, roles }: RoleGuardProps) {
 
 const NO_ROLES: readonly string[] = [];
 
-/** Roles of the signed-in user, or `null` until the client-side auth state is readable. */
 function useStoredRoles(): readonly string[] | null {
   const user = useStoredUser();
   if (user === undefined) {

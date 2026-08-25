@@ -5,28 +5,8 @@ import com.vendorsphere.common.util.Money;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-/**
- * Pure vendor performance scoring (Requirement 26).
- *
- * <p>Five metrics, each in [0, 100] at money scale:
- *
- * <ul>
- *   <li>delivery: on-time deliveries / all deliveries (Requirement 26.1),</li>
- *   <li>quality: 100 minus damaged+rejected / received (Requirement 26.2),</li>
- *   <li>pricing: mean of peer-mean-total / own-total across the vendor's quotations, capped at 100
- *       (Requirement 26.3),</li>
- *   <li>responsiveness: quoted-before-closing / invitations (Requirement 26.4),</li>
- *   <li>fulfilment: DELIVERED-or-CLOSED orders / non-DRAFT, non-CANCELLED orders (Requirement
- *       26.5).</li>
- * </ul>
- *
- * <p>A zero denominator defaults that metric to 50.00 (Requirement 26.6); the overall score is the
- * arithmetic mean of the five (Requirement 26.7); the vendor rating maps score/20 back to [0, 5]
- * at scale 2 HALF_UP (Requirement 26.11).
- */
 public final class PerformanceCalculator {
 
-    /** The raw counts and ratios the service aggregates from stored rows. */
     public record Inputs(
             long deliveriesTotal,
             long deliveriesOnTime,
@@ -39,7 +19,6 @@ public final class PerformanceCalculator {
             long purchaseOrdersFulfilled) {
     }
 
-    /** The five metrics plus their mean. */
     public record Scores(
             BigDecimal delivery,
             BigDecimal quality,
@@ -73,7 +52,6 @@ public final class PerformanceCalculator {
                 clamp(responsiveness), clamp(fulfilment), clamp(overall));
     }
 
-    /** Requirement 26.11: rating = score / 20 at scale 2 HALF_UP, staying inside [0, 5]. */
     public static BigDecimal vendorRating(BigDecimal score) {
         return scale2(score).divide(new BigDecimal("20"), Money.MONEY_SCALE, RoundingMode.HALF_UP);
     }

@@ -9,11 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-/** The procurement dashboard figures of Requirement 27. */
 @Service
 public class DashboardService {
 
-    /** The seven headline figures of Requirement 27.1, as the dashboard screen renders them. */
     public record Dashboard(
             BigDecimal totalSpend,
             long activeRfqCount,

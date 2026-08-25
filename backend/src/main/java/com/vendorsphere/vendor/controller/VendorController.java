@@ -41,20 +41,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Vendor endpoints (Requirement 30, API surface).
- *
- * <p>Role grants follow the acceptance criteria exactly: ADMIN everywhere (30.3), the
- * PROCUREMENT_OFFICER on registration, profile update, contacts and document management (30.4), the
- * PROCUREMENT_MANAGER on status change and performance reads (30.5). The linked vendor user reaches
- * its own profile and its own documents (30.8); narrowing to "own" is not expressible in a role
- * expression, so those grants admit VENDOR and the services enforce record ownership through
- * {@code VendorAccessGuard}, answering a foreign identifier as 404.
- *
- * <p>Listings accept {@code page}, {@code size}, {@code sort} and {@code direction} and return
- * {@code PageResponse}; unknown sort fields are rejected by {@code PageSupport} with 400 listing the
- * sortable fields (Requirements 31.1 through 31.5).
- */
 @RestController
 @RequestMapping("/api/v1/vendors")
 @Tag(name = "Vendors")
@@ -103,11 +89,6 @@ public class VendorController {
         return ApiResponse.ok("Vendor registered", vendorService.register(request));
     }
 
-    /**
-     * Requirements 2.5 and 2.7: every internal role granted here sees all of its organization's
-     * profiles; a VENDOR caller is narrowed by the service to the linked one and answers a foreign
-     * identifier as 404.
-     */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'PROCUREMENT_MANAGER', 'VENDOR')")
     @Operation(summary = "Get a vendor profile with category, performance score and expiring documents")
@@ -115,7 +96,6 @@ public class VendorController {
         return ApiResponse.ok(vendorService.get(id));
     }
 
-    /** Requirement 2.7 lets a linked vendor user update its own profile; the guard narrows it. */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'VENDOR')")
     @Operation(summary = "Update a vendor profile")
@@ -167,7 +147,6 @@ public class VendorController {
         return ApiResponse.ok("Vendor contact removed", null);
     }
 
-    /** Requirement 5.1 also admits the linked vendor user; the guard narrows both verbs. */
     @GetMapping("/{id}/documents")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'VENDOR')")
     @Operation(summary = "List a vendor's compliance documents with derived expiry states")

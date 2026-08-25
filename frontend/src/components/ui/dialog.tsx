@@ -40,7 +40,7 @@ export function DialogContent({
         {children}
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
           <X className="size-4" aria-hidden="true" />
-          {/* Icon-only control keeps an accessible name (Requirement 35.14). */}
+          { }
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>

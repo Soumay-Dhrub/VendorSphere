@@ -12,7 +12,6 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 
-/** One goods receipt against a purchase order (Requirement 20.1). */
 @Entity
 @Table(name = "deliveries")
 public class Delivery extends CreatedOnlyEntity {

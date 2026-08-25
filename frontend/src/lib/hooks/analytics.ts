@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * Query hooks for the dashboard summary and the analytics reports.
- *
- * Every figure is aggregated server-side; these hooks are read-only, and the
- * lifecycle mutations that change spend, performance or cycle time invalidate
- * `analyticsKeys.all` from their own modules.
- */
-
 import { useQuery } from "@tanstack/react-query";
 import {
   getCategoryDistribution,

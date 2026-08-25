@@ -1,6 +1,5 @@
 "use client";
 
-/** Purchase order list with lifecycle status badges (Requirement 35.5). */
 import { usePurchaseOrders } from "@/lib/hooks/purchaseOrders";
 import { formatMoney } from "@/lib/format";
 import type { PurchaseOrderStatus } from "@/lib/api/types";

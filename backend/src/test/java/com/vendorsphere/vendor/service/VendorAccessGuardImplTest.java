@@ -28,10 +28,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-/**
- * The confidentiality rule of Requirements 2.7 and 30.8: a vendor user reaches its own vendor's
- * records and nothing else, an internal user is unaffected, and every uncertain case denies.
- */
 class VendorAccessGuardImplTest {
 
     private static final String QUOTATION_NOT_FOUND = "Quotation not found";
@@ -50,10 +46,6 @@ class VendorAccessGuardImplTest {
         RequestContextHolder.resetRequestAttributes();
     }
 
-    /**
-     * Requirement 30.8 restricts vendor users, not internal ones: an officer reads every vendor's
-     * records subject to their role grants, so the guard neither denies nor queries anything.
-     */
     @Test
     void anInternalUserIsUnrestrictedAndResolvesNoVendorAtAll() {
         authenticate(principal(RoleName.PROCUREMENT_OFFICER));
@@ -69,7 +61,6 @@ class VendorAccessGuardImplTest {
         verifyNoInteractions(vendorRepository);
     }
 
-    /** Requirement 2.7: the linked vendor is resolved and its own records are visible. */
     @Test
     void aVendorUserResolvesItsLinkedVendorAndSeesItsOwnRecords() {
         UserPrincipal principal = principal(RoleName.VENDOR);
@@ -81,10 +72,6 @@ class VendorAccessGuardImplTest {
                 .doesNotThrowAnyException();
     }
 
-    /**
-     * Requirement 30.10: another vendor's record is reported as absent, with the caller's own pinned
-     * wording, so it cannot be told apart from a record that does not exist.
-     */
     @Test
     void anotherVendorsRecordIsNotFoundUnderTheCallerSuppliedMessage() {
         UserPrincipal principal = principal(RoleName.VENDOR);
@@ -100,12 +87,6 @@ class VendorAccessGuardImplTest {
                 QUOTATION_NOT_FOUND);
     }
 
-    /**
-     * A VENDOR account with no {@code vendors.user_id} row fails closed. Reporting "no vendor" here
-     * the way an internal caller does would hand the account every vendor's records, so the record
-     * check denies and the scope lookup refuses outright rather than returning an empty scope a
-     * listing filter would read as "no restriction".
-     */
     @Test
     void aVendorUserWithNoLinkedVendorIsDeniedRatherThanTreatedAsInternal() {
         UserPrincipal principal = principal(RoleName.VENDOR);
@@ -121,10 +102,6 @@ class VendorAccessGuardImplTest {
                 .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * {@code vendors.user_id} carries no unique constraint, so two rows can name one account. Choosing
-     * one would silently decide whose data the account reads, so an ambiguous link denies as well.
-     */
     @Test
     void anAccountLinkedToMoreThanOneVendorIsDenied() {
         UserPrincipal principal = principal(RoleName.VENDOR);
@@ -138,10 +115,6 @@ class VendorAccessGuardImplTest {
                 .hasMessage(VendorAccessGuardImpl.ACCESS_DENIED_MESSAGE);
     }
 
-    /**
-     * A listing consults the guard once per row, so the link is read once per request however many
-     * times it is asked for.
-     */
     @Test
     void theLinkedVendorIsResolvedOncePerRequest() {
         UserPrincipal principal = principal(RoleName.VENDOR);
@@ -158,7 +131,6 @@ class VendorAccessGuardImplTest {
                 .findIdsByUserIdAndOrganizationId(principal.getId(), organizationId);
     }
 
-    /** A second request re-resolves: the cache lives no longer than the request that filled it. */
     @Test
     void aDifferentPrincipalInAFreshRequestIsResolvedAgain() {
         UserPrincipal firstVendor = principal(RoleName.VENDOR);
@@ -177,11 +149,6 @@ class VendorAccessGuardImplTest {
                 QUOTATION_NOT_FOUND);
     }
 
-    /**
-     * Scheduled jobs call the same services without a request or a principal. The guard treats that as
-     * an internal caller instead of failing, since a job is not a vendor and there is nothing to hide
-     * from it.
-     */
     @Test
     void outsideARequestAndWithoutAPrincipalTheGuardImposesNoRestriction() {
         assertThat(guard.currentVendorId()).isEmpty();
@@ -191,7 +158,6 @@ class VendorAccessGuardImplTest {
         verifyNoInteractions(vendorRepository);
     }
 
-    /** Without a request there is nowhere to cache, so the guard resolves per call and still decides. */
     @Test
     void withoutARequestContextTheGuardResolvesPerCallRatherThanFailing() {
         UserPrincipal principal = principal(RoleName.VENDOR);

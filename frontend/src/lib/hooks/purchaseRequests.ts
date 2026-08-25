@@ -1,7 +1,5 @@
 "use client";
 
-/** Query and mutation hooks for purchase requests, items and review actions. */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addPurchaseRequestItem,

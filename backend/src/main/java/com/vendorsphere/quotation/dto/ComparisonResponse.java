@@ -7,10 +7,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * The normalized side-by-side comparison of an RFQ (Requirement 15): one row per qualifying
- * quotation, ordered by evaluation score descending then total amount ascending.
- */
 public record ComparisonResponse(
         UUID rfqId,
         String rfqNumber,
@@ -39,7 +35,6 @@ public record ComparisonResponse(
     ) {
     }
 
-    /** The quoted figures of one RFQ item within a row (Requirement 15.3). */
     public record ItemRow(
             UUID rfqItemId,
             String itemName,

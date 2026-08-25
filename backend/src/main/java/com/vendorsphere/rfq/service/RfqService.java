@@ -47,30 +47,23 @@ import java.util.UUID;
 @Service
 public class RfqService {
 
-    /** Pinned by Requirement 9.6. */
     static final String DATES_MESSAGE = "Closing date must be after opening date";
 
-    /** Pinned by Requirement 11.6. */
     static final String CANCELLATION_REASON_MESSAGE = "Cancellation reason is required";
 
-    /** Pinned by Requirement 11.8. */
     static final String AWARDED_CANCEL_MESSAGE = "Awarded RFQ cannot be cancelled";
 
-    /** Pinned by Requirement 10.6. */
     static final String NO_INVITEES_MESSAGE = "RFQ requires at least one invited vendor";
 
-    /** Pinned by Requirement 7.5; the same positivity rule governs copied and added lines. */
     static final String QUANTITY_MESSAGE = "Quantity must be greater than zero";
 
     static final String NOT_FOUND_MESSAGE = "RFQ not found";
     static final String ITEM_NOT_FOUND_MESSAGE = "RFQ item not found";
 
-    /** Requirement 9.2: the 409 names the source request's current status. */
     static String notFromStatusMessage(PurchaseRequestStatus status) {
         return "Cannot create an RFQ from a " + status + " purchase request";
     }
 
-    /** Sortable fields of the listing; createdAt descending reads newest first. */
     public static final SortWhitelist SORTABLE =
             SortWhitelist.of("createdAt", "closingDate", "status");
 
@@ -109,15 +102,6 @@ public class RfqService {
         this.clock = clock;
     }
 
-    /**
-     * Creates a DRAFT RFQ from an APPROVED or PROCUREMENT_STARTED purchase request (Requirement
-     * 9.1), copying every request item in authoring order with its source identifier retained
-     * (Requirement 9.3).
-     *
-     * <p>The first RFQ sourced from a request moves it from APPROVED to PROCUREMENT_STARTED
-     * (Requirement 9.4); later RFQs leave that state untouched. The date rule of Requirement 9.6 is
-     * asserted before anything is written.
-     */
     @Transactional
     public RfqResponse create(RfqCreateRequest request) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -169,10 +153,6 @@ public class RfqService {
         return toDetailResponse(saved);
     }
 
-    /**
-     * Edits the header of a DRAFT RFQ (Requirement 9.5); the same DRAFT gate governs items, so once
-     * published the bidding terms are frozen. The date rule of Requirement 9.6 applies on update too.
-     */
     @Transactional
     public RfqResponse update(UUID rfqId, RfqUpdateRequest request) {
         assertDates(request.openingDate(), request.closingDate());
@@ -205,10 +185,6 @@ public class RfqService {
         }
     }
 
-    /**
-     * Adds one line to a DRAFT RFQ. Sort order follows the current item count, mirroring the
-     * purchase request rule, so copied and added lines interleave in authoring order.
-     */
     @Transactional
     public RfqResponse addItem(UUID rfqId, RfqItemRequest request) {
         Rfq rfq = findDraft(rfqId);
@@ -264,10 +240,6 @@ public class RfqService {
         return item;
     }
 
-    /**
-     * Opens a DRAFT RFQ for bidding (Requirement 11.1). At least one invitation must exist
-     * (Requirement 10.6) - an RFQ nobody was invited to cannot be published by accident.
-     */
     @Transactional
     public RfqResponse open(UUID rfqId) {
         Rfq rfq = findInOrganization(rfqId);
@@ -279,7 +251,6 @@ public class RfqService {
         return toDetailResponse(rfqRepository.save(rfq));
     }
 
-    /** Closes an OPEN RFQ; the scheduled closing job drives the same machine step. */
     @Transactional
     public RfqResponse close(UUID rfqId) {
         Rfq rfq = findInOrganization(rfqId);
@@ -288,11 +259,6 @@ public class RfqService {
         return toDetailResponse(rfqRepository.save(rfq));
     }
 
-    /**
-     * Cancels a not-yet-awarded RFQ with a mandatory reason (Requirements 11.6, 11.7): every
-     * in-flight quotation is rejected, every invited vendor's users are notified and the reason is
-     * persisted. An AWARDED RFQ refuses cancellation outright (Requirement 11.8).
-     */
     @Transactional
     public RfqResponse cancel(UUID rfqId, RfqCancelRequest request) {
         String reason = request == null || request.reason() == null
@@ -328,16 +294,11 @@ public class RfqService {
 
     // ----- reads -----
 
-    /** One RFQ with items and invitations (Requirement 9.5 audience). */
     @Transactional(readOnly = true)
     public RfqResponse get(UUID rfqId) {
         return toDetailResponse(findInOrganization(rfqId));
     }
 
-    /**
-     * A page of the caller's organization's RFQs. Three queries fixed per page - content, count,
-     * nothing else - because items and invitations are only carried on detail reads.
-     */
     @Transactional(readOnly = true)
     public PageResponse<RfqResponse> search(RfqSearchCriteria criteria, Pageable pageable) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -353,7 +314,6 @@ public class RfqService {
                 .orElseThrow(() -> new BusinessException(NOT_FOUND_MESSAGE, HttpStatus.NOT_FOUND));
     }
 
-    /** {@link #findInOrganization} plus the DRAFT-only authoring gate of Requirement 9.5. */
     private Rfq findDraft(UUID rfqId) {
         Rfq rfq = findInOrganization(rfqId);
         if (rfq.getStatus() != RfqStatus.DRAFT) {
@@ -373,7 +333,6 @@ public class RfqService {
                 .toList();
     }
 
-    /** Detail projection: header plus items in authoring order and every invitation. */
     private RfqResponse toDetailResponse(Rfq rfq) {
         List<RfqResponse.RfqItemResponse> items = rfqItemRepository
                 .findByRfqIdOrderBySortOrderAscIdAsc(rfq.getId()).stream()
@@ -386,7 +345,6 @@ public class RfqService {
         return RfqResponse.from(rfq, items, vendors);
     }
 
-    /** Header-only projection for list rows: no item or invitation queries per row. */
     private RfqResponse toHeaderResponse(Rfq rfq) {
         return RfqResponse.from(rfq, null, null);
     }

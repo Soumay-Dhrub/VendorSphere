@@ -31,22 +31,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-/**
- * The audit trail as seen from the wire: append-only at the transport level (Requirement 29.9),
- * ADMIN-only (Requirement 29.7), filtered (Requirement 29.6) and tenant-scoped (Requirements 29.3,
- * 30.10).
- *
- * <p>Every case goes through {@link MockMvc} with the real security filter chain, the real
- * {@code @PreAuthorize} evaluation and a real PostgreSQL schema, because that is where these
- * guarantees actually live: the 405 comes out of Spring MVC's handler lookup, the 403 out of method
- * security, and the tenant scope out of the authenticated principal. A test against a stubbed
- * service would show none of it.
- *
- * <p>Nothing here is {@code @Transactional}: each request has to commit on its own, the way a real
- * one does. Fixtures are therefore committed and removed in {@link #removeCommittedFixtures()}, and
- * every assertion is scoped to an organization this test created so a shared database carries no
- * weight.
- */
 class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
 
     private static final String COLLECTION = "/api/v1/audit-logs";
@@ -57,15 +41,9 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private AuditLogRepository auditLogRepository;
 
-    /**
-     * Only for teardown. {@code AuditLogRepository} deliberately exposes no delete - that is the
-     * point of Requirement 29.8 - so the rows this test commits are removed with SQL rather than by
-     * widening the production contract.
-     */
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    /** Organization A holds the trail; organization B exists only to be kept out of it. */
     private Organization organizationA;
     private Organization organizationB;
     private TestActor adminOfA;
@@ -93,7 +71,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
         recordEntry(organizationB, adminOfB, AuditAction.VENDOR_CREATED, "Vendor", UUID.randomUUID());
     }
 
-    /** {@code audit_logs.actor_id} does not cascade, so the trail goes before its actors. */
     @AfterEach
     void removeCommittedFixtures() {
         committedAuditIds.forEach(
@@ -104,11 +81,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
 
     // ----- Requirement 29.9: append-only at the transport level -----
 
-    /**
-     * The controller declares only {@code GET}, so Spring MVC answers a write verb with 405 by
-     * itself. That is the whole of the enforcement, which is exactly why it is worth pinning: this
-     * test fails the day someone adds a write handler to the audit path.
-     */
     @ParameterizedTest
     @ValueSource(strings = {"PUT", "PATCH", "DELETE"})
     void writeVerbsAgainstTheAuditCollectionAreMethodNotAllowed(String method) throws Exception {
@@ -120,16 +92,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
         assertTheTrailOfOrganizationAIsIntact();
     }
 
-    /**
-     * The same verbs against a per-entry path, run as an ADMIN deliberately: that is the one role
-     * which can reach audit data at all, so anything other than a refusal here would mean a write
-     * path exists.
-     *
-     * <p>The refusal is a 404 rather than the collection's 405: no handler is mapped to
-     * {@code /audit-logs/{id}} for any verb, so the request never reaches method matching. Either way
-     * the entry is untouched afterwards, which is what Requirement 29.9 is about - a refusal that had
-     * already changed the row would be worse than an acceptance.
-     */
     @ParameterizedTest
     @ValueSource(strings = {"PUT", "PATCH", "DELETE"})
     void writeVerbsAgainstASingleAuditEntryAreRefusedAndChangeNothing(String method)
@@ -145,7 +107,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
 
     // ----- Requirement 29.7: ADMIN only -----
 
-    /** Requirement 29.3: the one role that may read the trail gets it, newest entry first. */
     @Test
     void adminReadsTheAuditTrailOfTheirOwnOrganization() throws Exception {
         mockMvc.perform(get(COLLECTION).with(as(adminOfA)))
@@ -155,7 +116,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.content[0].action").value("INVOICE_SUBMITTED"));
     }
 
-    /** Requirements 29.7 and 30.9: every other role is refused, with the pinned wording. */
     @ParameterizedTest
     @ValueSource(strings = {
             "PROCUREMENT_MANAGER", "PROCUREMENT_OFFICER", "REQUESTER", "FINANCE", "VENDOR"})
@@ -169,11 +129,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 
-    /**
-     * Requirement 30.2: no token, no trail. The filter chain's {@code AuthenticationEntryPoint}
-     * answers 401 in the same envelope as everything else, which distinguishes an anonymous caller
-     * from the authenticated-but-unauthorized 403 asserted above.
-     */
     @Test
     void anUnauthenticatedRequestGetsNoAuditData() throws Exception {
         mockMvc.perform(get(COLLECTION))
@@ -184,12 +139,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
 
     // ----- Requirement 29.6: filters, through the query string -----
 
-    /**
-     * The filtering itself is covered against the database in {@code AuditLogRepositoryTest}; what
-     * only shows up here is the binding of {@code actorId}, {@code entityType}, {@code entityId},
-     * {@code from} and {@code to} out of the query string into the criteria, and that they narrow
-     * rather than widen. The combination below matches exactly one of organization A's three entries.
-     */
     @Test
     void combinedActorEntityAndRangeFiltersReturnOnlyTheMatchingEntry() throws Exception {
         mockMvc.perform(get(COLLECTION)
@@ -219,11 +168,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
 
     // ----- Requirements 29.3 and 30.10: tenant scoping -----
 
-    /**
-     * Being an ADMIN grants the trail of your own organization only. The response is 200 carrying B's
-     * single entry rather than a 403, because the organization comes from the principal and cannot be
-     * influenced by the request.
-     */
     @Test
     void adminOfAnotherOrganizationSeesNoneOfTheseEntries() throws Exception {
         mockMvc.perform(get(COLLECTION).with(as(adminOfB)))
@@ -242,7 +186,6 @@ class AuditLogApiIntegrationTest extends AbstractIntegrationTest {
 
     // ----- helpers -----
 
-    /** Organization A still holds its three original entries, unchanged. */
     private void assertTheTrailOfOrganizationAIsIntact() {
         List<AuditLog> trail = auditLogRepository.search(
                         organizationA.getId(),

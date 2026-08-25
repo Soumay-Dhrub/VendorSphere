@@ -33,26 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Goods receipt recording and delivery progress derivation (Requirements 20, 21).
- *
- * <p>Recording a receipt and deriving the purchase order's progress happen in one transaction
- * (Requirement 20.10): cumulative received quantities are recomputed per touched line, the order
- * moves to PARTIALLY_DELIVERED or DELIVERED as the figures dictate (Requirements 21.2, 21.3), a
- * recorded receipt clears the overdue flag (Requirement 21.6) and officers plus finance are notified
- * (Requirement 20.8). Every write re-runs the vendor performance recalculation.
- */
 @Service
 public class DeliveryService {
 
-    /** Pinned by Requirement 20.4. */
     static final String RECEIVED_QUANTITY_MESSAGE = "Received quantity must be greater than zero";
 
-    /** Pinned by Requirement 20.5. */
     static final String DAMAGED_EXCEEDS_MESSAGE =
             "Damaged and rejected quantities cannot exceed the received quantity";
 
-    /** Pinned by Requirement 20.7. */
     static final String FOREIGN_ITEM_MESSAGE = "Delivery item does not belong to the purchase order";
 
     static final String NOT_FOUND_MESSAGE = "Purchase order not found";
@@ -92,16 +80,6 @@ public class DeliveryService {
         this.clock = clock;
     }
 
-    /**
-     * Records one goods receipt against an in-flight order (Requirement 20.1): validates every line
-     * before anything is written, then persists, recomputes delivered quantities and derives progress
-     * in the caller's transaction.
-     *
-     * <p>Line rules: received quantity strictly positive (Requirement 20.4); damaged and rejected
-     * quantities cannot exceed it (Requirement 20.5); the cumulative received quantity cannot pass
-     * the ordered quantity, with the 409 naming item name and both figures (Requirement 20.6); and a
-     * foreign purchase-order item is refused (Requirement 20.7).
-     */
     @Transactional
     public void record(
             UUID poId, com.vendorsphere.delivery.dto.DeliveryRecordRequest request) {
@@ -190,10 +168,6 @@ public class DeliveryService {
         performanceEngine.recalculate(po.getVendor().getId());
     }
 
-    /**
-     * The delivery history of one order: per line, ordered vs cumulative received/damaged/rejected
-     * and what is still outstanding (Requirement 20.9).
-     */
     @Transactional(readOnly = true)
     public List<com.vendorsphere.delivery.dto.DeliveryProgressResponse.ItemProgress> progress(
             UUID poId) {
@@ -230,11 +204,6 @@ public class DeliveryService {
         return rows;
     }
 
-    /**
-     * Recomputes each line's delivered quantity from its receipts (Requirement 21.1), then moves the
-     * order to PARTIALLY_DELIVERED or DELIVERED (Requirements 21.2, 21.3) and clears the overdue flag
-     * now that goods have arrived (Requirement 21.6).
-     */
     private void deriveProgress(PurchaseOrder po, List<PurchaseOrderItem> items) {
         boolean allDelivered = !items.isEmpty();
         boolean anyDelivered = false;
@@ -270,7 +239,6 @@ public class DeliveryService {
         poRepository.save(po);
     }
 
-    /** Helper keeping the machine call site flat without importing transitions everywhere. */
     static final class PurchaseOrderStatusTransitionsHelper {
 
         private PurchaseOrderStatusTransitionsHelper() {
@@ -282,7 +250,6 @@ public class DeliveryService {
         }
     }
 
-    /** Requirement 20.6 wording: names the item, the ordered and the cumulative quantity. */
     static String overReceiveMessage(PurchaseOrderItem item, BigDecimal cumulative) {
         return "Delivered quantity for " + item.getItemName()
                 + " would exceed the ordered quantity of " + item.getQuantity()

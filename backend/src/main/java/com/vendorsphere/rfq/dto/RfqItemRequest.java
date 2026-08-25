@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-/** Create and update payload for one RFQ item (Requirement 9.5). */
 public record RfqItemRequest(
         @NotBlank @Size(max = 255) String itemName,
         @NotNull BigDecimal quantity,

@@ -1,7 +1,5 @@
 "use client";
 
-/** Query and mutation hooks for notifications and their read state. */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getUnreadNotificationCount,

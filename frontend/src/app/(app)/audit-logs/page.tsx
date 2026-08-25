@@ -1,6 +1,5 @@
 "use client";
 
-/** The append-only audit trail, ADMIN only (Requirement 35.10). */
 import { useAuditLogs } from "@/lib/hooks/audit";
 
 export default function AuditLogsPage() {

@@ -1,7 +1,5 @@
 "use client";
 
-/** Query and mutation hooks for RFQs, RFQ items and vendor invitations. */
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addRfqItem,

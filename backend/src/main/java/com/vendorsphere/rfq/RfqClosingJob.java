@@ -14,20 +14,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * The scheduled RFQ closing evaluation (Requirements 11.3 through 11.5).
- *
- * <p>Runs every five minutes in UTC, as pinned. Two passes over OPEN RFQs:
- *
- * <ul>
- *   <li>any RFQ past its closing date transitions to CLOSED - the machine step an officer could also
- *       have pressed by hand;</li>
- *   <li>an RFQ closing between 24 and 25 hours out nudges every invited vendor that has not yet
- *       submitted a quotation. The five-minute cadence bounds the window, so each RFQ is nudged on
- *       roughly four consecutive runs; {@code createOnce} dedupe keeps those repeats from stacking
- *       up.</li>
- * </ul>
- */
 @Component
 public class RfqClosingJob {
 

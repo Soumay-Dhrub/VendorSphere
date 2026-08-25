@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** A purchase order with its lines and derived delivery figures. */
 public record PurchaseOrderResponse(
         UUID id,
         String poNumber,

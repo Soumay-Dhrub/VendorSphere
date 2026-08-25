@@ -35,10 +35,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * The pinned award rules of Requirement 17: the mandatory justification, the single-award guard, the
- * refusal of a rejected target, and the state flip of a successful selection.
- */
 class SelectionServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-20T09:00:00Z");
@@ -106,7 +102,6 @@ class SelectionServiceTest {
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 
-    /** Requirement 17.3: no justification, no award - pinned 400 message. */
     @Test
     void selectionWithoutAJustificationIsRejected() {
         assertThatThrownBy(() -> service.select(rfqId, winnerId, "   "))
@@ -118,7 +113,6 @@ class SelectionServiceTest {
         assertThat(rfq.getStatus()).isEqualTo(RfqStatus.CLOSED);
     }
 
-    /** Requirement 17.4: a second award is refused - pinned 409 message. */
     @Test
     void aSecondAwardIsRejected() {
         when(selectionRepository.existsByRfqId(rfqId)).thenReturn(true);
@@ -130,7 +124,6 @@ class SelectionServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /** Requirement 17.5: a rejected target names its status in the 409. */
     @Test
     void selectingARejectedQuotationNamesItsStatus() {
         when(selectionRepository.existsByRfqId(rfqId)).thenReturn(false);
@@ -143,10 +136,6 @@ class SelectionServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /**
-     * Requirement 17.1: one transaction flips the target to SELECTED, the RFQ to AWARDED (through
-     * EVALUATION from CLOSED) and persists the record.
-     */
     @Test
     void selectionFlipsTheAwardStateAndPersistsTheRecord() {
         when(selectionRepository.existsByRfqId(rfqId)).thenReturn(false);

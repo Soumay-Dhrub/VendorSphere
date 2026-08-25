@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * The purchase request list screen (Requirement 35.3): paged, filterable by status,
- * newest first. Rows link to the request detail screen once task 20.x builds it.
- */
-
 import { useState } from "react";
 import { usePurchaseRequests } from "@/lib/hooks/purchaseRequests";
 import type { PurchaseRequestStatus } from "@/lib/api/types";

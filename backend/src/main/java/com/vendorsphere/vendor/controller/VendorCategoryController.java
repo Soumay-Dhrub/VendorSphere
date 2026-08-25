@@ -22,13 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Vendor category endpoints (Requirement 4.4, API surface).
- *
- * <p>Category management is procurement-officer work (Requirement 30.4) and ADMIN inherits it
- * (Requirement 30.3). The list is read by name ascending with no paging, because a taxonomy is a
- * handful of rows a form renders whole, not a dataset.
- */
 @RestController
 @RequestMapping("/api/v1/vendor-categories")
 @Tag(name = "Vendor Categories")

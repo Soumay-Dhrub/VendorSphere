@@ -1,11 +1,3 @@
-/**
- * Invoice submission, three-way match retrieval, finding override and review
- * endpoints.
- *
- * Submission posts against the purchase order (`POST
- * /purchase-orders/{id}/invoices`); reads and review hang off `/invoices`.
- * Line totals and the invoice total are computed server-side (Requirement 22.3).
- */
 
 import { apiGet, apiGetPage, apiPost } from "./client";
 import type {
@@ -34,7 +26,7 @@ export type InvoiceItemRequest = {
 export type InvoiceRequest = {
   invoiceNumber: string;
   invoiceDate: IsoDate;
-  /** On or after the invoice date (Requirement 22.5). */
+
   dueDate: IsoDate;
   discountAmount?: Money;
   notes?: string | null;
@@ -106,7 +98,6 @@ export type MatchFindingResponse = {
   createdAt: IsoInstant;
 };
 
-/** Per-item comparison behind the match outcome (Requirement 23.9). */
 export type MatchLineResponse = {
   purchaseOrderItemId: Uuid;
   itemName: string;
@@ -124,15 +115,10 @@ export type MatchResultResponse = {
   findings: MatchFindingResponse[];
 };
 
-/** Justification is mandatory (Requirement 24.5). */
 export type MatchFindingOverrideRequest = {
   justification: string;
 };
 
-/**
- * Review decision. APPROVED is blocked while any finding is UNRESOLVED
- * (Requirement 24.3); REJECTED requires a reason (Requirement 24.7).
- */
 export type InvoiceReviewRequest = {
   status: Extract<InvoiceStatus, "APPROVED" | "REJECTED">;
   comments?: string;

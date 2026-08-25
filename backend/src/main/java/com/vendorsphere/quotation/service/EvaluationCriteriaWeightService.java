@@ -14,18 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-/**
- * Storage of the organization's evaluation criteria weights (Requirements 16.9 through 16.11).
- *
- * <p>The default of Requirement 16.9 applies while no row exists, so reading never fails and a new
- * organization scores immediately. Storing requires the four values to sum to exactly 1.00 -
- * otherwise the pinned 400 of Requirement 16.11 - so a mis-typed weight set can never silently skew
- * every future award recommendation.
- */
 @Service
 public class EvaluationCriteriaWeightService {
 
-    /** Pinned by Requirement 16.11. */
     static final String SUM_MESSAGE = "Criteria weights must sum to 1.00";
 
     private final EvaluationCriteriaWeightRepository repository;
@@ -42,7 +33,6 @@ public class EvaluationCriteriaWeightService {
         this.userRepository = userRepository;
     }
 
-    /** The stored weights, or {@link EvaluationEngine.Weights#DEFAULT} when none are stored. */
     @Transactional(readOnly = true)
     public EvaluationEngine.Weights resolve() {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -53,11 +43,6 @@ public class EvaluationCriteriaWeightService {
                 .orElse(EvaluationEngine.Weights.DEFAULT);
     }
 
-    /**
-     * Stores or replaces the organization's weights after validating their sum.
-     *
-     * @throws BusinessException 400 when the four values do not sum to 1.00 (Requirement 16.11)
-     */
     @Transactional
     public void save(BigDecimal price, BigDecimal delivery, BigDecimal performance,
                      BigDecimal warranty) {

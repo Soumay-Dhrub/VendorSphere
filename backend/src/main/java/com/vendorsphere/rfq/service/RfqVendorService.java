@@ -30,25 +30,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Vendor invitations to an RFQ (Requirement 10).
- *
- * <p>Invitations are all-or-nothing: every vendor named in one request is validated before any row is
- * written, so a batch containing one suspended supplier leaves no partial state behind
- * (Requirements 10.2, 10.3). A vendor user sees only the RFQs its linked vendor was invited to and
- * only once they are past DRAFT (Requirement 10.7), and the first such look moves the invitation from
- * INVITED to VIEWED (Requirement 10.5).
- */
 @Service
 public class RfqVendorService {
 
-    /** Pinned by Requirement 10.3. */
     static final String ALREADY_INVITED_MESSAGE = "Vendor already invited to this RFQ";
 
     static final String NOT_FOUND_MESSAGE = "RFQ not found";
     static final String VENDOR_NOT_FOUND_MESSAGE = "Vendor not found";
 
-    /** The statuses of an RFQ a vendor user may see (Requirement 10.7); DRAFT is never among them. */
     public static final Set<RfqStatus> VENDOR_VISIBLE_STATUSES =
             EnumSet.of(RfqStatus.OPEN, RfqStatus.CLOSED, RfqStatus.EVALUATION, RfqStatus.AWARDED);
 
@@ -78,19 +67,6 @@ public class RfqVendorService {
         this.clock = clock;
     }
 
-    /**
-     * Invites one or more vendors to an RFQ (Requirement 10.1).
-     *
-     * <h4>All-or-nothing</h4>
-     *
-     * <p>The validation pass runs first over the whole request: an unknown vendor answers 404, a
-     * vendor whose status is not ACTIVE answers 409 naming its company name and status, and an
-     * already-invited vendor answers the pinned 409 of Requirement 10.3. Only when every vendor passes
-     * are invitations written - so a rejected batch leaves nothing half-done.
-     *
-     * <p>Inviting into an OPEN RFQ notifies each invited vendor's linked users immediately
-     * (Requirement 10.4); invitations collected while the RFQ is still DRAFT notify nobody yet.
-     */
     @Transactional
     public List<RfqResponse.RfqVendorResponse> invite(UUID rfqId, RfqInviteRequest request) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
@@ -133,10 +109,6 @@ public class RfqVendorService {
         return created.stream().map(RfqResponse.RfqVendorResponse::from).toList();
     }
 
-    /**
-     * The vendor-facing RFQ listing (Requirement 10.7): only invited RFQs, only past-DRAFT statuses,
-     * newest first. The caller supplies the linked vendor id from {@code VendorAccessGuard}.
-     */
     @Transactional(readOnly = true)
     public List<Rfq> listForVendor(UUID organizationId, UUID vendorId) {
         return rfqRepository.findInvitedForVendor(
@@ -144,11 +116,6 @@ public class RfqVendorService {
                 org.springframework.data.domain.PageRequest.of(0, 100));
     }
 
-    /**
-     * The vendor-facing detail read (Requirement 10.5): the RFQ must be invited to this vendor and
-     * visible per Requirement 10.7, and the first look moves INVITED to VIEWED. Any other identifier
-     * is indistinguishable from an unknown RFQ.
-     */
     @Transactional
     public Rfq getForVendor(UUID organizationId, UUID vendorId, UUID rfqId) {
         RfqVendor invitation = rfqVendorRepository

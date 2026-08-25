@@ -6,7 +6,6 @@ import com.vendorsphere.notification.entity.Notification;
 import java.time.Instant;
 import java.util.UUID;
 
-/** One notification as returned to its recipient (Requirement 28.1). */
 public record NotificationResponse(
         UUID id,
         NotificationEvent event,

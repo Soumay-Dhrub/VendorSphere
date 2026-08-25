@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
-/** One invoiced line referencing the purchase order item it bills for (Requirement 22.2). */
 @Entity
 @Table(name = "invoice_items")
 public class InvoiceItem extends CreatedOnlyEntity {

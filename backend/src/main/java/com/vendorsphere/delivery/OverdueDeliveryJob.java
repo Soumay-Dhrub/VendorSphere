@@ -17,11 +17,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Daily overdue-delivery evaluation at 01:00 UTC (Requirement 21.7). Flags ISSUED/ACKNOWLEDGED
- * orders past their expected date that have received nothing (Requirement 21.4) and notifies
- * officers only on the false-to-true transition (Requirement 21.5).
- */
 @Component
 public class OverdueDeliveryJob {
 

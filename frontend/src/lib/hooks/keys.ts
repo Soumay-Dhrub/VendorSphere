@@ -1,13 +1,3 @@
-/**
- * Query keys for every area, in one place.
- *
- * Keys are hierarchical: the `all` key of an area is a prefix of every key in
- * that area, so `invalidateQueries({ queryKey: vendorKeys.all })` reaches the
- * list, the detail and the child collections. Keeping the factories together
- * lets a mutation in one area invalidate another (a delivery changes a purchase
- * order, a payment changes an invoice) without hook modules importing each
- * other.
- */
 
 import type { Uuid } from "@/lib/api/types";
 

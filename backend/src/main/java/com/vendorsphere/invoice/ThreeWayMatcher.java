@@ -4,26 +4,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Pure three-way matching (Requirement 23): purchase order vs goods received vs invoice.
- *
- * <p>Given the per-item comparisons and the order-level facts, the engine produces the finding list
- * in precedence order. The service owns persistence, dedupe lookups and status assignment; this class
- * owns only the comparison rules:
- *
- * <ul>
- *   <li>invoiced quantity beyond cumulative received → QUANTITY_MISMATCH (Requirement 23.2),</li>
- *   <li>unit price off by more than 0.01 from the PO price → PRICE_MISMATCH (Requirement 23.3),</li>
- *   <li>no delivery recorded on the order at all → MISSING_DELIVERY (Requirement 23.4),</li>
- *   <li>an already-MATCHED invoice with identical lines → DUPLICATE_INVOICE (Requirement 23.5).</li>
- * </ul>
- */
 public final class ThreeWayMatcher {
 
-    /** Tolerance for unit price equality, pinned by Requirement 23.3. */
     public static final BigDecimal PRICE_TOLERANCE = new BigDecimal("0.01");
 
-    /** One line-level comparison the engine receives. */
     public record ItemComparison(
             String itemName,
             BigDecimal orderedQuantity,
@@ -33,7 +17,6 @@ public final class ThreeWayMatcher {
             BigDecimal invoicedUnitPrice) {
     }
 
-    /** Inputs describing an invoice against its purchase order. */
     public record MatchInput(
             String purchaseOrderNumber,
             boolean orderHasDeliveries,
@@ -42,7 +25,6 @@ public final class ThreeWayMatcher {
             List<ItemComparison> items) {
     }
 
-    /** One produced finding; persistence mapping belongs to the service. */
     public record Finding(
             MatchFindingType type,
             String itemName,
@@ -55,10 +37,6 @@ public final class ThreeWayMatcher {
         throw new AssertionError("No instances");
     }
 
-    /**
-     * The findings for one invoice, ordered by the Requirement 23.7 precedence: DUPLICATE_INVOICE,
-     * MISSING_DELIVERY, QUANTITY_MISMATCH, PRICE_MISMATCH.
-     */
     public static List<Finding> match(MatchInput input) {
         List<Finding> findings = new ArrayList<>();
 
@@ -96,7 +74,6 @@ public final class ThreeWayMatcher {
         return orderByPrecedence(findings);
     }
 
-    /** The highest-precedence type of a non-empty finding list (Requirement 23.7). */
     public static MatchFindingType matchStatus(List<Finding> findings) {
         return orderByPrecedence(findings).get(0).type();
     }

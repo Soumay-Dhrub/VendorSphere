@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Tenant-scoped purchase order reads (Requirement 30.10). */
 public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UUID> {
 
     Optional<PurchaseOrder> findByIdAndOrganizationId(UUID id, UUID organizationId);
@@ -22,7 +21,6 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UU
 
     List<PurchaseOrder> findByOrganizationId(UUID organizationId);
 
-    /** Orders still awaiting goods and already past their promised date, for the overdue job. */
     java.util.List<PurchaseOrder> findByStatusInAndExpectedDeliveryBeforeAndDeliveryOverdueFalse(
             java.util.Collection<PurchaseOrderStatus> statuses, java.time.LocalDate cutoff);
 }

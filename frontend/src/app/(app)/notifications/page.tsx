@@ -1,6 +1,5 @@
 "use client";
 
-/** The calling user's notifications with read-state actions (Requirement 35.9). */
 import { useState } from "react";
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "@/lib/hooks/notifications";
 import type { NotificationResponse } from "@/lib/api/notifications";

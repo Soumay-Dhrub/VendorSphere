@@ -5,7 +5,6 @@ import com.vendorsphere.vendor.entity.VendorCategory;
 import java.time.Instant;
 import java.util.UUID;
 
-/** One vendor category of the caller's organization (Requirement 4.4). */
 public record VendorCategoryResponse(
         UUID id,
         String name,

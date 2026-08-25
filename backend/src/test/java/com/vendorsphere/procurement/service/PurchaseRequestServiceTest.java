@@ -52,11 +52,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * The authoring rules of Requirement 7 - DRAFT lock, quantity rule, sort order - and the review rules
- * of Requirement 8: the empty-item submission rejection, the reviewer fields recorded on approval and
- * the mandatory rejection reason. The transition table itself is exercised in the state machine tests.
- */
 class PurchaseRequestServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-03-14T09:15:30Z");
@@ -146,7 +141,6 @@ class PurchaseRequestServiceTest {
 
     // ----- creation (Requirement 7.1, 7.2) -----
 
-    /** Requirement 7.1: DRAFT status, generated PR number and the actor as requester. */
     @Test
     void createStartsAsADraftWithAGeneratedNumberAndTheActorAsRequester() {
         when(referenceNumberGenerator.allocate(organizationId, ReferencePrefix.PR))
@@ -162,7 +156,6 @@ class PurchaseRequestServiceTest {
         verify(purchaseRequestRepository).save(any(PurchaseRequest.class));
     }
 
-    /** Requirement 7.2: MEDIUM is the default when no priority is supplied; budget lands at scale 2. */
     @Test
     void createAppliesTheMediumDefaultAndNormalizesTheBudget() {
         service.create(new PurchaseRequestHeaderRequest(
@@ -174,7 +167,6 @@ class PurchaseRequestServiceTest {
                 .isEqualByComparingTo(new BigDecimal("1200000.00"));
     }
 
-    /** An explicit priority is honored: LOW stays LOW. */
     @Test
     void createHonorsAnExplicitPriority() {
         service.create(new PurchaseRequestHeaderRequest(
@@ -182,7 +174,6 @@ class PurchaseRequestServiceTest {
         assertThat(storedCapture().getPriority()).isEqualTo(Priority.LOW);
     }
 
-    /** Requirement 30.10: a foreign department misses as 404 before anything is written. */
     @Test
     void createWithAForeignDepartmentIsNotFound() {
         assertThatThrownBy(() -> service.create(new PurchaseRequestHeaderRequest(
@@ -197,7 +188,6 @@ class PurchaseRequestServiceTest {
 
     // ----- items (Requirements 7.3, 7.4, 7.5) -----
 
-    /** Requirement 7.4: quantity stored at quantity scale; sort order equals the item count. */
     @Test
     void addItemStoresQuantityAtScaleAndSortOrderAsTheItemCount() {
         PurchaseRequest draft = storedDraft();
@@ -216,7 +206,6 @@ class PurchaseRequestServiceTest {
         assertThat(stored.getValue().getUnit()).isEqualTo("PCS");
     }
 
-    /** An absent unit stores as the column default UNIT. */
     @Test
     void addItemWithoutAUnitStoresUnit() {
         PurchaseRequest draft = storedDraft();
@@ -232,7 +221,6 @@ class PurchaseRequestServiceTest {
         assertThat(stored.getValue().getSortOrder()).isZero();
     }
 
-    /** Requirement 7.5: zero and negative quantities are rejected with the pinned 400 message. */
     @Test
     void addItemWithANonPositiveQuantityIsRejected() {
         PurchaseRequest draft = storedDraft();
@@ -247,7 +235,6 @@ class PurchaseRequestServiceTest {
         verify(itemRepository, never()).save(any());
     }
 
-    /** Requirement 8.3: after submission the items are locked with the pinned 409 message. */
     @Test
     void itemsAreLockedAfterSubmission() {
         PurchaseRequest submitted = storedInStatus(PurchaseRequestStatus.SUBMITTED);
@@ -262,7 +249,6 @@ class PurchaseRequestServiceTest {
         verify(itemRepository, never()).save(any());
     }
 
-    /** The same lock applies to header edits once authoring has ended. */
     @Test
     void headerEditsAreLockedAfterSubmissionToo() {
         PurchaseRequest submitted = storedInStatus(PurchaseRequestStatus.SUBMITTED);
@@ -276,7 +262,6 @@ class PurchaseRequestServiceTest {
 
     // ----- submission and review (Requirements 7.7, 8.3 through 8.7) -----
 
-    /** Requirement 7.7: submitting a request with no items is rejected with the pinned 400 message. */
     @Test
     void submittingARequestWithoutItemsIsRejected() {
         PurchaseRequest draft = storedDraft();
@@ -293,10 +278,6 @@ class PurchaseRequestServiceTest {
         verifyNoInteractions(notificationService);
     }
 
-    /**
-     * Requirements 8.1, 8.4 and 29.2: submission moves DRAFT to SUBMITTED, notifies every procurement
-     * manager of the organization and records the trail entry.
-     */
     @Test
     void submitNotifiesManagersAndRecordsTheTrailEntry() {
         PurchaseRequest draft = storedDraft();
@@ -320,7 +301,6 @@ class PurchaseRequestServiceTest {
                 draft.getId(), PurchaseRequestStatus.SUBMITTED, null));
     }
 
-    /** Requirement 8.2: a decision from a state outside the table is the machine's own 409. */
     @Test
     void approvingAnAlreadyApprovedRequestIsRejectedByTheMachine() {
         PurchaseRequest approved = storedInStatus(PurchaseRequestStatus.APPROVED);
@@ -333,7 +313,6 @@ class PurchaseRequestServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /** Requirement 8.5: approval records reviewer, decision instant and comments as review notes. */
     @Test
     void approvalRecordsTheReviewerFieldsAndNotes() {
         PurchaseRequest underReview = storedInStatus(PurchaseRequestStatus.UNDER_REVIEW);
@@ -349,7 +328,6 @@ class PurchaseRequestServiceTest {
                 eq("PurchaseRequest"), eq(underReview.getId()), any(), any());
     }
 
-    /** A freshly submitted request walks SUBMITTED to UNDER_REVIEW internally, then to APPROVED. */
     @Test
     void approvalFromSubmittedPassesThroughUnderReview() {
         PurchaseRequest submitted = storedInStatus(PurchaseRequestStatus.SUBMITTED);
@@ -359,7 +337,6 @@ class PurchaseRequestServiceTest {
         assertThat(submitted.getStatus()).isEqualTo(PurchaseRequestStatus.APPROVED);
     }
 
-    /** Requirement 8.6: rejecting without a reason is rejected with the pinned 400 message. */
     @Test
     void rejectionWithoutAReasonIsRejected() {
         PurchaseRequest underReview = storedInStatus(PurchaseRequestStatus.UNDER_REVIEW);
@@ -376,7 +353,6 @@ class PurchaseRequestServiceTest {
         verifyNoInteractions(auditService);
     }
 
-    /** Requirement 8.7: rejection records the reason as notes and notifies the requester. */
     @Test
     void rejectionRecordsTheReasonAndNotifiesTheRequester() {
         PurchaseRequest submitted = storedInStatus(PurchaseRequestStatus.SUBMITTED);
@@ -394,7 +370,6 @@ class PurchaseRequestServiceTest {
 
     // ----- visibility (Requirements 8.9, 30.6, 30.10) -----
 
-    /** Requirement 30.10: another tenant's request misses as 404. */
     @Test
     void aCrossTenantRequestIsNotFound() {
         UUID foreignId = UUID.randomUUID();
@@ -415,7 +390,6 @@ class PurchaseRequestServiceTest {
                 new BigDecimal("1200000"));
     }
 
-    /** The entity this test's create/update call persisted - {@code save} echoes its argument. */
     private PurchaseRequest storedCapture() {
         ArgumentCaptor<PurchaseRequest> stored = ArgumentCaptor.forClass(PurchaseRequest.class);
         verify(purchaseRequestRepository).save(stored.capture());

@@ -15,14 +15,6 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
-/**
- * One vendor's invitation to one RFQ (Requirement 10.1).
- *
- * <p>{@code rfq_vendors} carries no timestamp column of its own - {@code invited_at} plays that role
- * - so this entity extends {@link IdentifiedEntity}. The V1 unique constraint on
- * {@code (rfq_id, vendor_id)} backs the already-invited guard of Requirement 10.3 at the database
- * even though the service checks first.
- */
 @Entity
 @Table(name = "rfq_vendors")
 public class RfqVendor extends IdentifiedEntity {

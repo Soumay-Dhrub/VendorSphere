@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * VendorSphere B2B SaaS landing page.
- * Sections: sticky nav, hero with product mock, problem, lifecycle pipeline,
- * features bento, comparison showcase, three-way matching, vendor scorecard,
- * roles, analytics preview, security, CTA, footer.
- * Reuses the existing design system (slate/emerald Tailwind tokens, lucide icons)
- * and keeps the animated pipeline from the previous iteration.
+ * VendorSphere landing page with purposeful product animations:
+ * live hero dashboard simulation, sequential lifecycle reveal, interactive
+ * quotation comparison, three-way-match demo with mismatch toggle, role
+ * workspace switcher, count-up scorecards and IntersectionObserver reveals.
+ * All motion respects prefers-reduced-motion and runs once.
  */
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, BarChart3, Boxes, Building2, CheckCircle2, ClipboardList,
@@ -16,30 +16,98 @@ import {
   ReceiptText, Scale3d, ShieldCheck, Truck, UserCog, Users, XCircle,
 } from "lucide-react";
 
+/* ---------- shared motion primitives ---------- */
+
+const REDUCED =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Fires once when the element enters the viewport. */
+function useInView<T extends HTMLElement>(threshold = 0.25) {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    if (REDUCED) { setInView(true); return; }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return [ref, inView] as const;
+}
+
+/** Fade/slide reveal wrapper (Requirement 10). */
+function Reveal({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  const [ref, inView] = useInView<HTMLDivElement>(0.15);
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? "translateY(0)" : "translateY(16px)",
+        transition: REDUCED ? "none" : `opacity .55s ease ${delay}ms, transform .55s ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Counts a number up once, triggered by `active`. */
+function useCountUp(target: number, active: boolean, duration = 1200) {
+  const [value, setValue] = useState(REDUCED ? target : 0);
+  useEffect(() => {
+    if (!active || REDUCED) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      setValue(Math.round(target * (1 - Math.pow(1 - progress, 3))));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, active, duration]);
+  return value;
+}
+
+/* ---------- data ---------- */
+
 const NAV = [
-  ["Product", "#product"],
-  ["Solutions", "#solutions"],
-  ["How It Works", "#how-it-works"],
-  ["Features", "#features"],
+  ["Product", "#product"], ["Solutions", "#solutions"],
+  ["How It Works", "#how-it-works"], ["Features", "#features"],
   ["Security", "#security"],
 ] as const;
 
 const STAGES = [
-  { label: "Purchase Request", icon: FileText },
-  { label: "RFQ", icon: Gauge },
-  { label: "Quotation", icon: Scale3d },
-  { label: "Compare", icon: GitCompareArrows },
-  { label: "Purchase Order", icon: PackageCheck },
-  { label: "Delivery", icon: Truck },
-  { label: "Invoice", icon: ReceiptText },
-  { label: "Payment", icon: Landmark },
-];
+  ["Purchase Request", ClipboardList], ["RFQ", Gauge], ["Quotation", FileText],
+  ["Compare", GitCompareArrows], ["Purchase Order", PackageCheck],
+  ["Delivery", Truck], ["Invoice", ReceiptText], ["Payment", Landmark],
+] as const;
 
 const PAINS = [
-  { title: "Scattered vendor information", body: "Profiles, contacts, documents and supplier history end up fragmented across inboxes and drives." },
-  { title: "Manual quotation comparison", body: "Teams hand-compare pricing, delivery terms, warranties and history — slowly and inconsistently." },
-  { title: "Poor purchase visibility", body: "Nobody can say where a request, PO, delivery or invoice currently stands without asking around." },
-  { title: "Limited accountability", body: "Decisions lack a centralized history; who approved what, when, and why is hard to answer later." },
+  ["Scattered vendor information", "Profiles, contacts, documents and supplier history end up fragmented across inboxes and drives."],
+  ["Manual quotation comparison", "Teams hand-compare pricing, delivery terms, warranties and history — slowly and inconsistently."],
+  ["Poor purchase visibility", "Nobody can say where a request, PO, delivery or invoice stands without asking around."],
+  ["Limited accountability", "Decisions lack a centralized history; who approved what, when, and why is hard to answer later."],
 ];
 
 const FEATURES = [
@@ -54,135 +122,514 @@ const FEATURES = [
   { icon: BarChart3, title: "Procurement Analytics", body: "Spend, vendors, outstanding invoices, open RFQs and cycle performance at a glance." },
 ];
 
-const ROLES = [
-  { icon: Gauge, role: "Procurement", body: "Run RFQs, compare quotations, select winners and issue purchase orders." },
-  { icon: Users, role: "Department Teams", body: "Raise purchase requirements and follow their status without chasing email." },
-  { icon: Landmark, role: "Finance", body: "Review invoices, see match results, track outstanding amounts and payments." },
-  { icon: Truck, role: "Vendors", body: "Respond to invitations, quote against line items and submit invoices." },
-  { icon: UserCog, role: "Administrators", body: "Manage users, roles, departments, vendors and the audit trail." },
-];
-
 const COMPARISON_ROWS = [
-  ["Total Price", "₹12,00,000", "₹11,50,000", "₹12,20,000"],
-  ["Delivery", "7 days", "15 days", "5 days"],
-  ["Warranty", "3 years", "2 years", "3 years"],
-  ["Vendor Rating", "4.7", "4.2", "4.8"],
-  ["Overall Score", "89", "76", "91"],
+  { criteria: "Total Price", values: ["₹12,00,000", "₹11,50,000", "₹12,20,000"], tip: "Lowest total earns the full price component of the evaluation score." },
+  { criteria: "Delivery", values: ["7 days", "15 days", "5 days"], tip: "Shorter committed delivery improves the delivery component of the vendor score." },
+  { criteria: "Warranty", values: ["3 years", "2 years", "3 years"], tip: "Longer warranty raises the warranty component of the evaluation score." },
+  { criteria: "Vendor Rating", values: ["4.7", "4.2", "4.8"], tip: "Historical supplier performance feeds the performance component." },
+  { criteria: "Overall Score", values: ["89", "76", "91"], tip: "Weighted blend of price, delivery, warranty and performance." },
 ];
 
-function SectionHeading({ eyebrow, title, sub }: { eyebrow?: string; title: string; sub?: string }) {
-  return (
-    <div className="mx-auto mb-12 max-w-2xl text-center">
-      {eyebrow && (
-        <p className="mb-3 text-xs font-medium uppercase tracking-widest text-emerald-400">{eyebrow}</p>
-      )}
-      <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{title}</h2>
-      {sub && <p className="mt-4 leading-7 text-slate-400">{sub}</p>}
-    </div>
-  );
-}
+const ROLES = [
+  { key: "procurement", label: "Procurement", icon: Gauge, body: "Run RFQs, compare quotations, select winners and issue purchase orders.", preview: ["RFQ-1042 · Open · 3 quotes", "Comparison ready — recommend Vendor C", "PO-2098 issued to Acme Supplies"] },
+  { key: "department", label: "Department", icon: Users, body: "Raise purchase requirements and follow their status without chasing email.", preview: ["PR-118 Laptops · Approved", "PR-122 Monitors · Under review", "PR-115 Desks · Delivered"] },
+  { key: "finance", label: "Finance", icon: Landmark, body: "Review invoices, see match results, track outstanding amounts and payments.", preview: ["INV-7821 · Matched · ₹11.5L", "INV-7790 · Price mismatch flagged", "Outstanding payables ₹11.6L"] },
+  { key: "vendor", label: "Vendor", icon: Truck, body: "Respond to invitations, quote against line items and submit invoices.", preview: ["Invited: RFQ-1042 closes in 3 days", "Your quote for PO-2098 accepted", "Invoice INV-8810 submitted"] },
+  { key: "admin", label: "Admin", icon: UserCog, body: "Manage users, roles, departments, vendors and the audit trail.", preview: ["User roles updated", "Vendor document expiring in 30 days", "Audit trail: award justification recorded"] },
+];
 
-/** Animated procurement pipeline (kept from the previous iteration). */
-function Pipeline() {
-  return (
-    <ol className="flex flex-col items-stretch justify-center gap-3 md:flex-row md:items-center">
-      {STAGES.map((stage, i) => (
-        <li key={stage.label} className="flex items-center">
-          <div className="group relative flex flex-1 items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3 transition hover:border-emerald-500/50 md:flex-none md:flex-col md:gap-1 md:px-3">
-            <div className="relative">
-              <stage.icon className="h-5 w-5 text-emerald-400" />
-              <span
-                aria-hidden
-                className="absolute inset-0 rounded-full opacity-0"
-                style={{ animation: `pipeline-glow 4s ease-in-out ${i * 0.5}s infinite` }}
-              />
-            </div>
-            <span className="text-xs text-slate-300">{stage.label}</span>
-          </div>
-          {i < STAGES.length - 1 && (
-            <span className="relative mx-1 hidden h-px w-8 shrink-0 bg-gradient-to-r from-emerald-500/50 to-slate-700 md:block">
-              <span
-                aria-hidden
-                className="absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-emerald-300 shadow-[0_0_8px_2px_rgba(52,211,153,0.6)]"
-                style={{ animation: `pipeline-pulse 4s linear ${i * 0.5}s infinite` }}
-              />
-            </span>
-          )}
-          {i < STAGES.length - 1 && (
-            <ArrowRight aria-hidden className="ml-auto h-4 w-4 rotate-90 text-slate-600 md:hidden" />
-          )}
-        </li>
-      ))}
-      <style>{`
-        @keyframes pipeline-pulse {
-          0% { left: 0; opacity: 0; }
-          15% { opacity: 1; }
-          85% { opacity: 1; }
-          100% { left: calc(100% - 6px); opacity: 0; }
-        }
-        @keyframes pipeline-glow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
-          12% { box-shadow: 0 0 18px 2px rgba(52,211,153,0.35); }
-          30% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
-        }
-      `}</style>
-    </ol>
-  );
-}
+/* ---------- animated hero dashboard simulation (Priority 4) ---------- */
 
-/** Hero product preview: a static, realistic mini-dashboard. */
-function ProductMock() {
-  const kpis = [
-    ["Procurement Spend", "₹48.2L"], ["Active Vendors", "24"],
-    ["Open RFQs", "6"], ["Pending Deliveries", "9"],
-    ["Outstanding Invoices", "₹11.6L"], ["Vendor Performance", "87"],
-  ];
+type Activity = { id: number; text: string };
+
+function HeroDashboard() {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const [rfqs, setRfqs] = useState(11);
+  const [deliveries, setDeliveries] = useState(5);
+  const [score, setScore] = useState(84);
+  const [invoiceStatus, setInvoiceStatus] = useState("Invoice Review");
+  const [activities, setActivities] = useState<Activity[]>([
+    { id: 0, text: "PO-2077 · Delivery received" },
+  ]);
+
+  useEffect(() => {
+    if (!inView || REDUCED) return;
+    const steps: [number, () => void][] = [
+      [2500, () => { setRfqs(12); pushActivity("RFQ-1042 opened for bidding"); }],
+      [5200, () => pushActivity("Vendor ABC submitted quotation for RFQ-1042")],
+      [8000, () => { setDeliveries(4); pushActivity("PO-2098 · Delivery received") }],
+      [10800, () => setScore(87)],
+      [13600, () => { setInvoiceStatus("Matched"); pushActivity("INV-7821 · Three-way match completed") }],
+    ];
+    const timers = steps.map(([ms, fn]) => setTimeout(fn, ms));
+    function pushActivity(text: string) {
+      setActivities((current) => [{ id: Date.now(), text }, ...current].slice(0, 2));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [inView]);
+
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-2xl shadow-black/50 backdrop-blur">
+    <div
+      ref={ref}
+      className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-[0_24px_70px_-20px_rgba(0,0,0,0.65)] transition-transform duration-700 [transform:perspective(1400px)_rotateX(1.5deg)]"
+    >
       <div className="flex items-center gap-1.5 pb-3">
         <span className="h-2.5 w-2.5 rounded-full bg-slate-700" />
         <span className="h-2.5 w-2.5 rounded-full bg-slate-700" />
         <span className="h-2.5 w-2.5 rounded-full bg-slate-700" />
         <span className="ml-3 rounded-md bg-slate-950 px-3 py-1 text-[10px] text-slate-500">vendorsphere / dashboard</span>
       </div>
+
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {kpis.map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p>
-            <p className="mt-1 text-sm font-semibold tabular-nums text-white">{value}</p>
+        <Kpi label="Active RFQs" value={String(rfqs)} highlight={rfqs === 12} />
+        <Kpi label="Open POs" value="18" />
+        <Kpi label="Pending Deliveries" value={String(deliveries)} highlight={deliveries === 4} />
+        <Kpi label="Outstanding Invoices" value="₹11.6L" />
+        <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+          <p className="text-[10px] uppercase tracking-wide text-slate-500">Supplier Performance</p>
+          <p className={`mt-1 text-sm font-semibold tabular-nums text-white transition-colors duration-700 ${score === 87 ? "text-emerald-300" : ""}`}>
+            {score}
+            {score === 87 && <span className="ml-1 text-[10px] text-emerald-400">▲</span>}
+          </p>
+        </div>
+        <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+          <p className="text-[10px] uppercase tracking-wide text-slate-500">Latest Invoice</p>
+          <p className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-all duration-700 ${
+            invoiceStatus === "Matched"
+              ? "bg-emerald-500/15 text-emerald-300"
+              : "bg-amber-500/10 text-amber-300"
+          }`}>
+            {invoiceStatus === "Matched" && <CheckCircle2 className="h-3 w-3" />}
+            {invoiceStatus}
+          </p>
+        </div>
+      </div>
+
+      {/* activity feed */}
+      <ul className="mt-2.5 space-y-1.5 rounded-lg border border-slate-800 bg-slate-950/70 p-2.5">
+        {activities.map((activity) => (
+          <li
+            key={activity.id}
+            className="flex items-center gap-2 px-1 py-1 text-xs text-slate-400"
+            style={{ animation: REDUCED ? undefined : "fade-slide .6s ease both" }}
+          >
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+            {activity.text}
+          </li>
+        ))}
+      </ul>
+
+      <style>{`
+        @keyframes fade-slide {
+          from { opacity: 0; transform: translateY(-6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function Kpi({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-lg border p-3 transition-colors duration-700 ${
+      highlight ? "border-emerald-500/40 bg-emerald-950/30" : "border-slate-800 bg-slate-950/70"
+    }`}>
+      <p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold tabular-nums text-white">{value}</p>
+    </div>
+  );
+}
+
+/* ---------- lifecycle (Priority 2): sequential stage reveal ---------- */
+
+function Pipeline() {
+  const [ref, inView] = useInView<HTMLOListElement>(0.3);
+  return (
+    <ol className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8" aria-label="Procurement lifecycle">
+      {STAGES.map(([label, Icon], i) => {
+        const shown = inView || REDUCED;
+        return (
+          <li
+            key={label}
+            className="relative flex flex-col items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-4"
+            style={{
+              opacity: shown ? 1 : 0,
+              transform: shown ? "translateY(0)" : "translateY(14px)",
+              transition: REDUCED ? "none" : `opacity .45s ease ${i * 220}ms, transform .45s ease ${i * 220}ms`,
+            }}
+          >
+            <Icon className="h-5 w-5 text-emerald-400" />
+            <span className="text-center text-[11px] leading-tight text-slate-300">{label}</span>
+            {shown && !REDUCED && (
+              <span
+                aria-hidden
+                className="absolute inset-x-2 bottom-1 h-0.5 origin-left rounded-full bg-emerald-400/70"
+                style={{ animation: `stage-fill .5s ease-out ${i * 220 + 250}ms both` }}
+              />
+            )}
+          </li>
+        );
+      })}
+      <style>{`
+        @keyframes stage-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+      `}</style>
+    </ol>
+  );
+}
+
+/* ---------- comparison showcase (Priority 3) ---------- */
+
+function ComparisonShowcase() {
+  const [ref, inView] = useInView<HTMLDivElement>(0.3);
+  const winnerScore = useCountUp(91, inView, 1400);
+
+  return (
+    <div ref={ref}>
+      <div className="overflow-x-auto rounded-2xl border border-slate-800">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <caption className="sr-only">Example quotation comparison for three vendors</caption>
+          <thead className="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400">
+            <tr>
+              <th scope="col" className="px-5 py-4">Criteria</th>
+              <th scope="col" className="px-5 py-4">Vendor A</th>
+              <th scope="col" className="px-5 py-4">Vendor B</th>
+              <th scope="col" className="relative px-5 py-4 text-emerald-300">
+                <span
+                  className="absolute right-3 top-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] normal-case tracking-normal transition-opacity duration-1000"
+                  style={{ opacity: inView ? 1 : 0 }}
+                >
+                  Best Overall Value
+                </span>
+                Vendor C ★
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800 bg-slate-950/60">
+            {COMPARISON_ROWS.map((row, i) => (
+              <tr
+                key={row.criteria}
+                className="group"
+                style={{
+                  opacity: inView ? 1 : 0,
+                  transition: REDUCED ? "none" : `opacity .5s ease ${i * 160}ms`,
+                }}
+              >
+                <th scope="row" className="px-5 py-3.5">
+                  <span className="cursor-help font-medium text-slate-300 underline decoration-slate-600 decoration-dotted underline-offset-4">
+                    {row.criteria}
+                    <span role="tooltip" className="pointer-events-none absolute z-10 ml-2 hidden w-56 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-normal normal-case leading-5 text-slate-300 shadow-xl group-hover:block">
+                      {row.tip}
+                    </span>
+                  </span>
+                </th>
+                <td className="px-5 py-3.5 text-slate-400">{row.values[0]}</td>
+                <td className="px-5 py-3.5 text-slate-400">{row.values[1]}</td>
+                <td className="border-x-2 border-emerald-500/40 bg-emerald-950/20 px-5 py-3.5 font-medium tabular-nums text-emerald-200">
+                  {row.criteria === "Overall Score"
+                    ? winnerScore
+                    : row.values[2]}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-center text-xs text-slate-600">
+        The platform recommends; an authorized procurement user makes the final selection with a recorded justification.
+      </p>
+    </div>
+  );
+}
+
+/* ---------- three-way matching demo (Priority 1) ---------- */
+
+const MATCH_CHECKS = ["Quantity match", "Unit price match", "Delivery confirmed", "Duplicate check"];
+
+function MatchDemo() {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const [checkIndex, setCheckIndex] = useState(0);
+  const [matched, setMatched] = useState(false);
+  const [mismatch, setMismatch] = useState(false);
+
+  // Sequential checks once in view (or immediately after toggle reset).
+  useEffect(() => {
+    if (!inView || REDUCED) {
+      if (REDUCED) { setCheckIndex(MATCH_CHECKS.length); setMatched(true); }
+      return;
+    }
+    const timers = MATCH_CHECKS.map((_, i) =>
+      setTimeout(() => setCheckIndex(i + 1), 900 + i * 550));
+    timers.push(setTimeout(() => setMatched(true), 900 + MATCH_CHECKS.length * 550));
+    return () => timers.forEach(clearTimeout);
+  }, [inView]);
+
+  const replay = useCallback(() => {
+    setMismatch(false);
+    setMatched(false);
+    setCheckIndex(0);
+    if (REDUCED) { setCheckIndex(MATCH_CHECKS.length); setMatched(true); return; }
+    MATCH_CHECKS.forEach((_, i) =>
+      setTimeout(() => setCheckIndex(i + 1), 700 + i * 500));
+    setTimeout(() => setMatched(true), 700 + MATCH_CHECKS.length * 500);
+  }, []);
+
+  const sources = [
+    { label: "Purchase Order", detail: "100 units × ₹1,000" },
+    { label: "Goods Received", detail: "100 units received" },
+    { label: "Vendor Invoice", detail: mismatch ? "100 units × ₹1,200" : "100 units × ₹1,000" },
+  ];
+
+  return (
+    <div ref={ref} className="grid items-center gap-8 lg:grid-cols-2">
+      <div className="space-y-3">
+        {sources.map((source, i) => (
+          <div
+            key={source.label}
+            className="relative flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3.5"
+            style={{
+              opacity: inView ? 1 : 0,
+              transform: inView ? "translateX(0)" : "translateX(-14px)",
+              transition: REDUCED ? "none" : `all .5s ease ${i * 180}ms`,
+            }}
+          >
+            <span className="font-medium text-white">{source.label}</span>
+            <span className={`text-sm tabular-nums ${source.label === "Vendor Invoice" && mismatch ? "text-amber-300" : "text-slate-400"}`}>
+              {source.detail}
+            </span>
+            <span
+              aria-hidden
+              className={`absolute inset-y-0 right-full my-auto h-px w-16 bg-gradient-to-l ${
+                matched ? "from-emerald-500/60" : "from-slate-700"
+              }`}
+            />
           </div>
         ))}
+        <div className="flex items-center gap-2 pl-1 pt-1 text-xs text-slate-500">
+          <ArrowRight className="h-3.5 w-3.5 text-emerald-400" />
+          All three streams feed the matching engine
+        </div>
       </div>
-      <div className="mt-2.5 grid gap-2.5 sm:grid-cols-5">
-        <div className="flex h-28 items-end gap-1.5 rounded-lg border border-slate-800 bg-slate-950/70 p-3 sm:col-span-3" aria-label="Monthly spend chart placeholder">
-          {[38, 55, 42, 70, 58, 82, 66, 90].map((h, i) => (
-            <div key={i} className="flex-1 rounded-sm bg-gradient-to-t from-teal-600/60 to-emerald-400/80" style={{ height: `${h}%` }} />
-          ))}
+
+      <div className="space-y-3">
+        <ol className="space-y-2">
+          {MATCH_CHECKS.map((check, i) => {
+            const done = checkIndex > i;
+            return (
+              <li
+                key={check}
+                className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm transition-all duration-500"
+                style={{ opacity: done ? 1 : 0.35, borderColor: done ? "rgb(16 185 129 / .35)" : undefined }}
+                aria-live="polite"
+              >
+                {done ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                ) : (
+                  <span className="h-4 w-4 shrink-0 rounded-full border border-slate-700" />
+                )}
+                {check}
+              </li>
+            );
+          })}
+        </ol>
+
+        <div
+          className={`flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all duration-700 ${
+            mismatch
+              ? "border-amber-700/60 bg-amber-950/30"
+              : "border-emerald-500/30 bg-emerald-500/10"
+          }`}
+          style={{ opacity: matched ? 1 : 0.4 }}
+          aria-live="polite"
+        >
+          {mismatch ? (
+            <>
+              <p className="flex items-center gap-2 text-sm font-medium text-amber-300">
+                <XCircle className="h-4 w-4" /> Price mismatch detected
+              </p>
+              <span className="text-xs text-amber-200/70">₹1,000 → ₹1,200 · blocked for review</span>
+            </>
+          ) : (
+            <>
+              <p className="flex items-center gap-2 text-sm font-medium text-emerald-200">
+                <CheckCircle2 className="h-4 w-4" /> MATCHED
+              </p>
+              <span className="text-xs text-slate-500">cleared for payment approval</span>
+            </>
+          )}
         </div>
-        <div className="space-y-2 rounded-lg border border-slate-800 bg-slate-950/70 p-3 sm:col-span-2">
-          {[["Acme Supplies", "87"], ["Nova Traders", "81"], ["Kiran & Co.", "74"]].map(([name, score]) => (
-            <div key={name}>
-              <div className="flex justify-between text-[10px] text-slate-400"><span>{name}</span><span>{score}</span></div>
-              <div className="mt-1 h-1.5 rounded-full bg-slate-800">
-                <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" style={{ width: `${Number(score)}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
+
+        <button
+          type="button"
+          onClick={() => (mismatch ? replay() : (setMismatch(true), setMatched(true)))}
+          className="rounded-lg border border-slate-700 px-4 py-2 text-xs text-slate-300 transition hover:border-slate-500 hover:bg-slate-900"
+        >
+          {mismatch ? "Replay matched scenario" : "Show mismatch example"}
+        </button>
       </div>
     </div>
   );
 }
 
+/* ---------- vendor scorecard (Priority 6) ---------- */
+
+const SCORE_METRICS = [["Delivery", 92], ["Quality", 88], ["Pricing", 80], ["Responsiveness", 91], ["Fulfilment", 85]] as const;
+
+function Scorecard() {
+  const [ref, inView] = useInView<HTMLDivElement>(0.4);
+  const overall = useCountUp(87, inView, 1300);
+  return (
+    <div ref={ref} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-7">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800 text-sm font-semibold text-white">AB</span>
+          <div>
+            <p className="font-medium text-white">ABC Technologies</p>
+            <p className="text-xs text-slate-500">Supplier since 2024</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-3xl font-semibold tabular-nums text-emerald-300">
+            {overall}<span className="text-base text-slate-500">/100</span>
+          </p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-500">Overall</p>
+        </div>
+      </div>
+      <div className="mt-6 space-y-3.5">
+        {SCORE_METRICS.map(([metric, score]) => {
+          const value = useCountUp(score, inView, 1100);
+          return (
+            <div key={metric}>
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>{metric}</span><span className="tabular-nums">{value}</span>
+              </div>
+              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"
+                  style={{
+                    width: `${inView ? value : 0}%`,
+                    transition: REDUCED ? "none" : "width 1.1s cubic-bezier(.22,.61,.36,1)",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- role switcher (Priority 5) ---------- */
+
+function RoleSwitcher() {
+  const [active, setActive] = useState(ROLES[0]);
+  return (
+    <div>
+      <div role="tablist" aria-label="Workspace roles" className="flex flex-wrap justify-center gap-2">
+        {ROLES.map((role) => (
+          <button
+            key={role.key}
+            role="tab"
+            aria-selected={active.key === role.key}
+            onClick={() => setActive(role)}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition ${
+              active.key === role.key
+                ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40"
+                : "text-slate-400 ring-1 ring-slate-800 hover:bg-slate-900 hover:text-white"
+            }`}
+          >
+            <role.icon className="h-4 w-4" />
+            {role.label}
+          </button>
+        ))}
+      </div>
+      <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+        <p key={active.key + "-body"} className="text-sm leading-6 text-slate-300" style={{ animation: REDUCED ? undefined : "fade-in .4s ease" }}>
+          {active.body}
+        </p>
+        <ul key={active.key} className="mt-4 space-y-2">
+          {active.preview.map((line) => (
+            <li
+              key={line}
+              className="rounded-lg border border-slate-800 bg-slate-900/60 px-3.5 py-2.5 text-xs text-slate-300"
+              style={{ animation: REDUCED ? undefined : "fade-slide-up .45s ease both" }}
+            >
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <style>{`
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fade-slide-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+    </div>
+  );
+}
+
+/* ---------- analytics preview (Priority 7) ---------- */
+
+function AnalyticsPreview() {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const spend = useCountUp(48, inView, 1400);
+  const vendors = useCountUp(28, inView, 1200);
+  const rfqs = useCountUp(7, inView, 1000);
+  const kpis = [
+    [`₹${spend}.6L`, "Procurement Spend"], [String(vendors), "Active Vendors"], [String(rfqs), "Open RFQs"],
+  ];
+  const bars = [42, 66, 51, 78, 62];
+  return (
+    <div ref={ref} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur">
+      <div className="grid grid-cols-3 gap-2.5">
+        {kpis.map(([value, label]) => (
+          <div key={label} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p>
+            <p className="mt-1 text-sm font-semibold tabular-nums text-white">{inView ? value : "—"}</p>
+          </div>
+        ))}
+      </div>
+      <div aria-hidden className="mt-2.5 flex h-24 items-end gap-2 rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+        {bars.map((height, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-sm bg-gradient-to-t from-teal-600/60 to-emerald-400/80"
+            style={{
+              height: inView ? `${height}%` : "4%",
+              transition: REDUCED ? "none" : `height .8s cubic-bezier(.22,.61,.36,1) ${i * 90}ms`,
+            }}
+          />
+        ))}
+      </div>
+      <p className="mt-2 text-right text-[10px] text-slate-600">Demo data</p>
+    </div>
+  );
+}
+
+/* ---------- page ---------- */
+
 export default function Home() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200">
-      {/* Navbar */}
-      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-slate-950/85 backdrop-blur">
+      {/* Navbar with scroll behaviour */}
+      <header
+        className={`sticky top-0 z-40 transition-all duration-300 ${
+          scrolled
+            ? "border-b border-slate-800/80 bg-slate-950/90 shadow-[0_8px_24px_-16px_rgba(0,0,0,0.8)] backdrop-blur"
+            : "border-b border-transparent bg-transparent"
+        }`}
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 shadow-lg shadow-emerald-500/20">
-              <Boxes className="h-4.5 w-4.5 text-slate-950" strokeWidth={2.4} />
+              <Boxes className="h-4 w-4 text-slate-950" strokeWidth={2.4} />
             </span>
             <span className="text-base font-semibold tracking-tight text-white">
               Vendor<span className="text-emerald-400">Sphere</span>
@@ -195,7 +642,7 @@ export default function Home() {
           </nav>
           <div className="flex items-center gap-2.5">
             <Link href="/login" className="rounded-lg px-3.5 py-2 text-sm text-slate-300 transition hover:text-white">Sign In</Link>
-            <Link href="/register" className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:brightness-110">Get Started</Link>
+            <Link href="/register" className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-xl hover:shadow-emerald-500/25">Get Started</Link>
           </div>
         </div>
       </header>
@@ -213,188 +660,142 @@ export default function Home() {
                 maskImage: "radial-gradient(ellipse at 30% 15%, black 25%, transparent 70%)",
               }}
             />
-            <div className="absolute left-[-12%] top-[-18%] h-[34rem] w-[34rem] animate-pulse rounded-full bg-emerald-500/10 blur-3xl" />
           </div>
-          <div className="relative mx-auto max-w-6xl px-6 pt-20 text-center">
-            <p className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-emerald-300">
-              Vendor &amp; procurement management platform
-            </p>
-            <h1 className="mx-auto max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-              Procurement, from request to payment —{" "}
-              <span className="bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">in one place.</span>
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
-              Manage vendors, RFQs, quotations, purchase orders, deliveries,
-              invoices, and supplier performance through one centralized
-              procurement workspace.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:brightness-110"
-              >
-                Get Started <ArrowRight className="h-4 w-4" />
-              </Link>
-              <a
-                href="#how-it-works"
-                className="rounded-xl border border-slate-700 px-6 py-3 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
-              >
-                See How It Works
-              </a>
-            </div>
-
-            {/* Product mock */}
-            <div className="mx-auto mt-14 max-w-4xl">
-              <ProductMock />
-              <p className="mt-3 text-xs text-slate-600">Illustrative workspace preview</p>
-            </div>
+          <div className="relative mx-auto max-w-6xl px-6 pb-16 pt-20 text-center">
+            <Reveal>
+              <p className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-emerald-300">
+                Vendor &amp; procurement management platform
+              </p>
+            </Reveal>
+            <Reveal delay={80}>
+              <h1 className="mx-auto max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+                Procurement, from request to payment —{" "}
+                <span className="bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">in one place.</span>
+              </h1>
+            </Reveal>
+            <Reveal delay={160}>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
+                Manage vendors, RFQs, quotations, purchase orders, deliveries,
+                invoices, and supplier performance through one centralized
+                procurement workspace.
+              </p>
+            </Reveal>
+            <Reveal delay={240}>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/30"
+                >
+                  Get Started <ArrowRight className="h-4 w-4" />
+                </Link>
+                <a
+                  href="#how-it-works"
+                  className="rounded-xl border border-slate-700 px-6 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-900"
+                >
+                  See How It Works
+                </a>
+              </div>
+            </Reveal>
+            <Reveal delay={350} className="mx-auto mt-14 max-w-4xl">
+              <HeroDashboard />
+              <p className="mt-3 text-xs text-slate-600">Illustrative workspace preview — simulated activity</p>
+            </Reveal>
           </div>
         </section>
 
         {/* Problem */}
         <section id="solutions" className="border-y border-slate-800/70 bg-slate-900/40">
           <div className="mx-auto max-w-6xl px-6 py-20">
-            <SectionHeading
-              eyebrow="The problem"
-              title="Procurement shouldn't live across spreadsheets, emails, and PDFs."
-              sub="Fragmented tools make sourcing slow, opaque and hard to audit. VendorSphere consolidates the workflow without changing how your team works."
-            />
+            <Reveal>
+              <SectionHeading
+                eyebrow="The problem"
+                title="Procurement shouldn't live across spreadsheets, emails, and PDFs."
+                sub="Fragmented tools make sourcing slow, opaque and hard to audit. VendorSphere consolidates the workflow without changing how your team works."
+              />
+            </Reveal>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {PAINS.map((pain) => (
-                <article key={pain.title} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-                  <XCircle aria-hidden className="h-5 w-5 text-rose-400/80" />
-                  <h3 className="mt-3 font-medium text-white">{pain.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{pain.body}</p>
-                </article>
+              {PAINS.map(([title, body], i) => (
+                <Reveal key={title} delay={i * 90}>
+                  <article className="h-full rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+                    <XCircle aria-hidden className="h-5 w-5 text-rose-400/80" />
+                    <h3 className="mt-3 font-medium text-white">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{body}</p>
+                  </article>
+                </Reveal>
               ))}
             </div>
-            <div className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-3 text-sm">
-              {["Email threads", "Excel sheets", "PDF quotes", "Phone calls"].map((tool) => (
-                <span key={tool} className="rounded-full border border-slate-700 px-3.5 py-1.5 text-slate-400 line-through decoration-rose-400/60">{tool}</span>
-              ))}
-              <ArrowRight className="h-4 w-4 text-emerald-400" />
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 font-medium text-emerald-300">VendorSphere</span>
-            </div>
+            <Reveal delay={200}>
+              <div className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-3 text-sm">
+                {["Email threads", "Excel sheets", "PDF quotes", "Phone calls"].map((tool) => (
+                  <span key={tool} className="rounded-full border border-slate-700 px-3.5 py-1.5 text-slate-400 line-through decoration-rose-400/60">{tool}</span>
+                ))}
+                <ArrowRight className="h-4 w-4 text-emerald-400" />
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 font-medium text-emerald-300">VendorSphere</span>
+              </div>
+            </Reveal>
           </div>
         </section>
 
         {/* Lifecycle */}
         <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHeading
-            eyebrow="How it works"
-            title="One connected procurement pipeline."
-            sub="Every stage hands off cleanly to the next — with status, ownership and history preserved."
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow="How it works"
+              title="One connected procurement pipeline."
+              sub="Every stage hands off cleanly to the next — with status, ownership and history preserved."
+            />
+          </Reveal>
           <Pipeline />
         </section>
 
         {/* Features bento */}
         <section id="features" className="border-y border-slate-800/70 bg-slate-900/40">
           <div className="mx-auto max-w-6xl px-6 py-20">
-            <SectionHeading
-              eyebrow="Features"
-              title="Everything procurement needs, nothing it doesn't."
-            />
+            <Reveal>
+              <SectionHeading eyebrow="Features" title="Everything procurement needs, nothing it doesn't." />
+            </Reveal>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map(({ icon: Icon, title, body, wide }) => (
-                <article key={title} className={`group rounded-2xl border border-slate-800 bg-slate-950/60 p-6 transition hover:border-emerald-500/30 ${wide ? "sm:col-span-2" : ""}`}>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
-                    <Icon className="h-4.5 w-4.5" />
-                  </div>
-                  <h3 className="mt-4 font-medium text-white">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{body}</p>
-                </article>
+              {FEATURES.map(({ icon: Icon, title, body, wide }, i) => (
+                <Reveal key={title} delay={(i % 3) * 90} className={wide ? "sm:col-span-2" : ""}>
+                  <article className="h-full rounded-2xl border border-slate-800 bg-slate-950/60 p-6 transition hover:border-emerald-500/30">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="mt-4 font-medium text-white">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{body}</p>
+                  </article>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Comparison showcase */}
+        {/* Comparison */}
         <section className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHeading
-            eyebrow="Quotation comparison"
-            title="Compare bids on equivalent terms."
-            sub="The same request, normalized across every responding vendor — scores computed by the platform, decision made by you."
-          />
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <caption className="sr-only">Example quotation comparison for three vendors</caption>
-              <thead className="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400">
-                <tr>
-                  <th scope="col" className="px-5 py-4">Criteria</th>
-                  <th scope="col" className="px-5 py-4">Vendor A</th>
-                  <th scope="col" className="px-5 py-4">Vendor B</th>
-                  <th scope="col" className="relative px-5 py-4 text-emerald-300">
-                    <span className="absolute right-3 top-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] normal-case tracking-normal">Recommended</span>
-                    Vendor C ★
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-950/60">
-                {COMPARISON_ROWS.map(([criteria, a, b, c]) => (
-                  <tr key={criteria}>
-                    <th scope="row" className="px-5 py-3.5 font-medium text-slate-300">{criteria}</th>
-                    <td className={`px-5 py-3.5 tabular-nums ${criteria === "Total Price" ? "text-slate-200" : "text-slate-400"}`}>{a}</td>
-                    <td className={`px-5 py-3.5 tabular-nums ${criteria === "Total Price" ? "text-slate-200" : "text-slate-400"}`}>{b}</td>
-                    <td className="border-x-2 border-emerald-500/40 bg-emerald-950/20 px-5 py-3.5 font-medium tabular-nums text-emerald-200">{c}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-center text-xs text-slate-600">
-            The platform recommends; an authorized procurement user makes the final selection with a recorded justification.
-          </p>
+          <Reveal>
+            <SectionHeading
+              eyebrow="Quotation comparison"
+              title="Compare bids on equivalent terms."
+              sub="The same request, normalized across every responding vendor — scores computed by the platform, decision made by you."
+            />
+          </Reveal>
+          <ComparisonShowcase />
         </section>
 
         {/* Three-way matching */}
         <section className="border-y border-slate-800/70 bg-slate-900/40">
           <div className="mx-auto max-w-6xl px-6 py-20">
-            <SectionHeading
-              eyebrow="Three-way matching"
-              title="Catch invoice discrepancies before payment."
-            />
-            <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="space-y-3">
-                {[["Purchase Order", ClipboardList], ["Goods Received", PackageCheck], ["Vendor Invoice", ReceiptText]].map(([label, Icon]: any) => (
-                  <div key={label} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3.5">
-                    <Icon className="h-4.5 w-4.5 text-slate-400" />
-                    <span className="font-medium text-white">{label}</span>
-                  </div>
-                ))}
-                <div className="flex items-center justify-center py-1">
-                  <span className="h-px w-12 bg-gradient-to-r from-transparent to-emerald-500/60" />
-                  <ArrowRight className="mx-2 h-4 w-4 text-emerald-400" />
-                  <span className="h-px w-12 bg-gradient-to-l from-transparent to-emerald-500/60" />
-                </div>
-                <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-4">
-                  <ShieldCheck className="h-5 w-5 text-emerald-300" />
-                  <span className="font-medium text-emerald-200">Three-Way Match</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {["Quantity match", "Unit price match (± tolerance)", "Delivery confirmed", "Duplicate invoice check"].map((check) => (
-                  <div key={check} className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" /> {check}
-                  </div>
-                ))}
-                <div className="rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3.5">
-                  <p className="flex items-center gap-2 text-sm font-medium text-amber-300">
-                    <XCircle className="h-4 w-4" /> Price mismatch detected
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-amber-200/70">
-                    PO ₹1,000/unit · Invoice ₹1,200/unit → blocked pending review or override with justification.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <Reveal>
+              <SectionHeading eyebrow="Three-way matching" title="Catch invoice discrepancies before payment." />
+            </Reveal>
+            <MatchDemo />
           </div>
         </section>
 
         {/* Vendor performance */}
         <section className="mx-auto max-w-6xl px-6 py-20">
           <div className="grid items-center gap-10 lg:grid-cols-2">
-            <div>
+            <Reveal>
               <p className="text-xs font-medium uppercase tracking-widest text-emerald-400">Vendor performance</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 Source on history, not intuition.
@@ -404,100 +805,75 @@ export default function Home() {
                 not intuition alone. Every award, receipt and invoice feeds the
                 next month&apos;s scorecard automatically.
               </p>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-7">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800 text-sm font-semibold text-white">AB</span>
-                  <div>
-                    <p className="font-medium text-white">ABC Technologies</p>
-                    <p className="text-xs text-slate-500">Supplier since 2024</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-semibold tabular-nums text-emerald-300">87<span className="text-base text-slate-500">/100</span></p>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Overall</p>
-                </div>
-              </div>
-              <div className="mt-6 space-y-3.5">
-                {[["Delivery", 92], ["Quality", 88], ["Pricing", 80], ["Responsiveness", 91], ["Fulfilment", 85]].map(([metric, score]) => (
-                  <div key={metric as string}>
-                    <div className="flex justify-between text-xs text-slate-400">
-                      <span>{metric}</span><span className="tabular-nums">{score}</span>
-                    </div>
-                    <div className="mt-1.5 h-2 rounded-full bg-slate-800">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700"
-                        style={{ width: `${score}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            </Reveal>
+            <Reveal delay={150}><Scorecard /></Reveal>
           </div>
         </section>
 
         {/* Roles */}
         <section className="border-y border-slate-800/70 bg-slate-900/40">
           <div className="mx-auto max-w-6xl px-6 py-20">
-            <SectionHeading
-              eyebrow="Role-based workspace"
-              title="A different view for every responsibility."
-            />
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-              {ROLES.map(({ icon: Icon, role, body }) => (
-                <article key={role} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-                  <Icon className="h-5 w-5 text-emerald-400" />
-                  <h3 className="mt-3 font-medium text-white">{role}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{body}</p>
-                </article>
+            <Reveal>
+              <SectionHeading eyebrow="Role-based workspace" title="A different view for every responsibility." />
+            </Reveal>
+            <RoleSwitcher />
+          </div>
+        </section>
+
+        {/* Analytics */}
+        <section className="mx-auto max-w-4xl px-6 py-20 text-center">
+          <Reveal>
+            <SectionHeading eyebrow="Analytics" title="Spend, suppliers and status at a glance." />
+          </Reveal>
+          <AnalyticsPreview />
+        </section>
+
+        {/* Security */}
+        <section id="security" className="border-y border-slate-800/70 bg-slate-900/40">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <Reveal>
+              <SectionHeading eyebrow="Security" title="Built with control and accountability in mind." />
+            </Reveal>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                ["Role-Based Access", "Users only access permitted functionality, enforced server-side."],
+                ["Secure Authentication", "JWT-based protected APIs with refresh-token rotation."],
+                ["Audit Trail", "Critical procurement actions remain traceable to actor and time."],
+                ["Backend Validation", "Business rules are enforced in the API, never only in the client."],
+              ].map(([title, body], i) => (
+                <Reveal key={title} delay={i * 80}>
+                  <article className="h-full rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
+                    <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                    <h3 className="mt-3 font-medium text-white">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{body}</p>
+                  </article>
+                </Reveal>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Security */}
-        <section id="security" className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHeading
-            eyebrow="Security"
-            title="Built with control and accountability in mind."
-          />
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              ["Role-Based Access", "Users only access permitted functionality, enforced server-side."],
-              ["Secure Authentication", "JWT-based protected APIs with refresh-token rotation."],
-              ["Audit Trail", "Critical procurement actions remain traceable to actor and time."],
-              ["Backend Validation", "Business rules are enforced in the API, never only in the client."],
-            ].map(([title, body]) => (
-              <article key={title} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-                <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                <h3 className="mt-3 font-medium text-white">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
         {/* Final CTA */}
         <section className="mx-auto max-w-4xl px-6 pb-24">
-          <div className="rounded-3xl border border-emerald-900/50 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 p-10 text-center">
-            <h2 className="text-2xl font-semibold text-white sm:text-3xl">
-              Bring your procurement workflow into one workspace.
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
-              From vendor sourcing to invoice verification, VendorSphere gives
-              teams a structured way to manage the complete procurement lifecycle.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/register" className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-7 py-3 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:brightness-110">
-                Get Started
-              </Link>
-              <Link href="/login" className="rounded-xl border border-slate-700 px-7 py-3 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900">
-                Sign In
-              </Link>
+          <Reveal>
+            <div className="rounded-3xl border border-emerald-900/50 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 p-10 text-center">
+              <h2 className="text-2xl font-semibold text-white sm:text-3xl">
+                Bring your procurement workflow into one workspace.
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
+                From vendor sourcing to invoice verification, VendorSphere gives
+                teams a structured way to manage the complete procurement lifecycle.
+              </p>
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                <Link href="/register" className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-7 py-3 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+                  Get Started
+                </Link>
+                <Link href="/login" className="rounded-xl border border-slate-700 px-7 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-900">
+                  Sign In
+                </Link>
+              </div>
             </div>
-          </div>
+          </Reveal>
         </section>
       </main>
 
@@ -542,6 +918,16 @@ export default function Home() {
           © {new Date().getFullYear()} VendorSphere · Source · Compare · Award · Receive · Match · Pay
         </div>
       </footer>
+    </div>
+  );
+}
+
+function SectionHeading({ eyebrow, title, sub }: { eyebrow?: string; title: string; sub?: string }) {
+  return (
+    <div className="mx-auto mb-12 max-w-2xl text-center">
+      {eyebrow && <p className="mb-3 text-xs font-medium uppercase tracking-widest text-emerald-400">{eyebrow}</p>}
+      <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{title}</h2>
+      {sub && <p className="mt-4 leading-7 text-slate-400">{sub}</p>}
     </div>
   );
 }

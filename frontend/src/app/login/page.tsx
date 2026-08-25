@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login } from "@/lib/api";
+import { Boxes } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -38,9 +39,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/60 p-8">
-        <h1 className="text-2xl font-semibold text-white">Sign in</h1>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950/60 px-6">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-2xl shadow-emerald-500/5">
+        <div className="mb-8 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 shadow-lg shadow-emerald-500/20">
+            <Boxes className="h-5 w-5 text-slate-950" strokeWidth={2.4} />
+          </div>
+          <div>
+            <p className="text-lg font-semibold tracking-tight text-white">
+              Vendor<span className="text-emerald-400">Sphere</span>
+            </p>
+            <p className="text-xs text-slate-500">B2B procurement platform</p>
+          </div>
+        </div>
+        <h1 className="text-xl font-semibold text-white">Sign in to your workspace</h1>
         <p className="mt-2 text-sm text-slate-400">
           Demo: admin@demo-corp.com / Admin@123
         </p>

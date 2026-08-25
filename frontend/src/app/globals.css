@@ -73,14 +73,16 @@ body {
   to { transform: translateX(-50%); }
 }
 
-/* Light mode: invert the dark-first design while keeping media and brand
-   icons readable. Toggled via the ☀️/🌙 button in the app shell. */
-html.light body {
-  filter: invert(0.93) hue-rotate(180deg);
-  background: #e2e8f0;
+/* Light mode: the app is authored dark-first, so light mode is produced by
+   inverting the root element once. Applying it on <html> (not body) keeps
+   position:sticky working and avoids double-filtering children; raster media
+   is flipped back so photographs stay natural. Toggled by the ☀️/🌙 button
+   and persisted in localStorage ("vs-theme"). */
+html.light {
+  filter: invert(0.94) hue-rotate(180deg);
+  background: #f1f5f9;
 }
 html.light img,
-html.light video,
-html.light [aria-hidden="true"] {
+html.light video {
   filter: invert(1) hue-rotate(180deg);
 }

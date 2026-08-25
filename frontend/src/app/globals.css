@@ -73,16 +73,62 @@ body {
   to { transform: translateX(-50%); }
 }
 
-/* Light mode: the app is authored dark-first, so light mode is produced by
-   inverting the root element once. Applying it on <html> (not body) keeps
-   position:sticky working and avoids double-filtering children; raster media
-   is flipped back so photographs stay natural. Toggled by the ☀️/🌙 button
-   and persisted in localStorage ("vs-theme"). */
+
+/* ------------------------------------------------------------------
+   Light mode: deterministic remapping of the dark-first utility classes
+   to their light counterparts. Toggled by adding `.light` to <html>
+   (☀️/🌙 button in the app shell, persisted as "vs-theme").
+   Escaped class names cover the /opacity variants the app uses.
+   ------------------------------------------------------------------ */
 html.light {
-  filter: invert(0.94) hue-rotate(180deg);
-  background: #f1f5f9;
+  background: #f8fafc;
+  color: #0f172a;
 }
-html.light img,
-html.light video {
-  filter: invert(1) hue-rotate(180deg);
+
+/* surfaces */
+html.light .bg-slate-950,
+html.light .bg-slate-950\/70,
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/50,
+html.light .bg-slate-950\/40,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/70,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/50,
+html.light .bg-slate-900\/40 {
+  background-color: #ffffff !important;
+}
+html.light .bg-slate-900 { background-color: #f8fafc !important; }
+html.light .bg-slate-800,
+html.light .bg-slate-800\/70 { background-color: #e2e8f0 !important; }
+
+/* text */
+html.light .text-white { color: #0f172a !important; }
+html.light .text-slate-200 { color: #1e293b !important; }
+html.light .text-slate-300 { color: #334155 !important; }
+html.light .text-slate-400 { color: #475569 !important; }
+html.light .text-slate-500 { color: #64748b !important; }
+html.light .text-slate-600 { color: #94a3b8 !important; }
+
+/* accents stay emerald but darken for contrast on white */
+html.light .text-emerald-300,
+html.light .text-emerald-400 { color: #047857 !important; }
+html.light .text-emerald-200 { color: #065f46 !important; }
+html.light .text-amber-300 { color: #b45309 !important; }
+html.light .text-rose-300 { color: #be123c !important; }
+html.light .text-sky-300 { color: #0369a1 !important; }
+html.light .text-violet-300 { color: #6d28d9 !important; }
+
+/* borders */
+html.light .border-slate-800,
+html.light .border-slate-800\/70 { border-color: #cbd5e1 !important; }
+html.light .border-slate-700 { border-color: #cbd5e1 !important; }
+html.light .border-slate-600 { border-color: #94a3b8 !important; }
+
+/* rings & soft accent fills read fine on white already; inputs */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }

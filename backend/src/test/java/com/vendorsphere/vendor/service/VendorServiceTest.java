@@ -69,6 +69,7 @@ class VendorServiceTest {
     private final ReferenceNumberGenerator referenceNumberGenerator =
             mock(ReferenceNumberGenerator.class);
     private final AuditService auditService = mock(AuditService.class);
+    private final VendorAccessGuard vendorAccessGuard = mock(VendorAccessGuard.class);
 
     private final VendorService service = new VendorService(
             vendorRepository,
@@ -77,6 +78,7 @@ class VendorServiceTest {
             organizationRepository,
             referenceNumberGenerator,
             auditService,
+            vendorAccessGuard,
             Clock.fixed(NOW, ZoneOffset.UTC));
 
     private final UUID organizationId = UUID.randomUUID();

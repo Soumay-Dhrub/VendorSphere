@@ -13,6 +13,7 @@ import com.vendorsphere.common.util.SortWhitelist;
 import com.vendorsphere.organization.repository.OrganizationRepository;
 import com.vendorsphere.vendor.DocumentExpiryEvaluator;
 import com.vendorsphere.vendor.VendorStatus;
+import com.vendorsphere.vendor.dto.VendorPerformanceResponse;
 import com.vendorsphere.vendor.dto.VendorProfileSnapshot;
 import com.vendorsphere.vendor.dto.VendorRequest;
 import com.vendorsphere.vendor.dto.VendorResponse;
@@ -88,6 +89,7 @@ public class VendorService {
     private final OrganizationRepository organizationRepository;
     private final ReferenceNumberGenerator referenceNumberGenerator;
     private final AuditService auditService;
+    private final VendorAccessGuard vendorAccessGuard;
     private final Clock clock;
 
     public VendorService(
@@ -97,6 +99,7 @@ public class VendorService {
             OrganizationRepository organizationRepository,
             ReferenceNumberGenerator referenceNumberGenerator,
             AuditService auditService,
+            VendorAccessGuard vendorAccessGuard,
             Clock clock
     ) {
         this.vendorRepository = vendorRepository;
@@ -105,6 +108,7 @@ public class VendorService {
         this.organizationRepository = organizationRepository;
         this.referenceNumberGenerator = referenceNumberGenerator;
         this.auditService = auditService;
+        this.vendorAccessGuard = vendorAccessGuard;
         this.clock = clock;
     }
 
@@ -152,7 +156,7 @@ public class VendorService {
     @Transactional
     public VendorResponse update(UUID vendorId, VendorRequest request) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
-        Vendor vendor = findInOrganization(vendorId, organizationId);
+        Vendor vendor = findVisibleVendor(vendorId, organizationId);
         VendorProfileSnapshot previous = VendorProfileSnapshot.from(vendor);
 
         if (!vendor.getEmail().equalsIgnoreCase(request.email())) {
@@ -173,7 +177,19 @@ public class VendorService {
     @Transactional(readOnly = true)
     public VendorResponse get(UUID vendorId) {
         UUID organizationId = SecurityUtils.getCurrentOrganizationId();
-        return toResponse(findInOrganization(vendorId, organizationId), organizationId);
+        return toResponse(findVisibleVendor(vendorId, organizationId), organizationId);
+    }
+
+    /**
+     * The vendor's current performance standing: its Performance_Score and the rating derived from
+     * it, both resolved exactly as a detail read resolves them (Requirement 2.5).
+     */
+    @Transactional(readOnly = true)
+    public VendorPerformanceResponse performance(UUID vendorId) {
+        Vendor vendor = findVisibleVendor(
+                vendorId, SecurityUtils.getCurrentOrganizationId());
+        return VendorPerformanceResponse.from(
+                vendor.getId(), performanceScoreOf(vendor), Money.money(vendor.getRating()));
     }
 
     /**
@@ -211,6 +227,19 @@ public class VendorService {
                 vendor,
                 performanceScore(vendor, snapshotScores.get(vendor.getId())),
                 expiringCounts.getOrDefault(vendor.getId(), 0L)));
+    }
+
+    /**
+     * Loads a vendor within the caller's organization, then applies the vendor-user restriction of
+     * Requirement 2.7: an internal user passes untouched, while a caller holding the VENDOR role is
+     * denied any profile other than the one its account is linked to. The guard raises 404 with this
+     * service's pinned wording, so a vendor user cannot tell another vendor's profile apart from a
+     * missing one (Requirements 2.6, 30.10).
+     */
+    private Vendor findVisibleVendor(UUID vendorId, UUID organizationId) {
+        Vendor vendor = findInOrganization(vendorId, organizationId);
+        vendorAccessGuard.assertVendorVisible(vendor.getId(), NOT_FOUND_MESSAGE);
+        return vendor;
     }
 
     private Vendor findInOrganization(UUID vendorId, UUID organizationId) {

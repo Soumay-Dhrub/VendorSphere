@@ -26,6 +26,16 @@ public interface VendorDocumentRepository extends JpaRepository<VendorDocument, 
             UUID vendorId, UUID organizationId);
 
     /**
+     * Every document of any organization whose expiry date is one of the supplied dates, backing the
+     * daily expiry job (Requirement 5.5).
+     *
+     * <p>The job asks for exactly three dates - the evaluation date plus 30, 7 and 1 day - so one
+     * query serves the whole run across all organizations; the caller groups the rows by the owning
+     * vendor's organization to fan notifications out per role.
+     */
+    List<VendorDocument> findByExpiryDateIn(Collection<LocalDate> expiryDates);
+
+    /**
      * Counts the vendor's documents whose expiry date falls inside the inclusive window
      * {@code [from, to]}, backing the expiring-document count of Requirement 2.5.
      *

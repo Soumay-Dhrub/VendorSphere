@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { register as registerUser } from "@/lib/api";
+import { Boxes } from "lucide-react";
 
 const registerSchema = z.object({
   organizationName: z.string().min(2, "Organization name is required"),
@@ -41,11 +42,24 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-10">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900/60 p-8">
-        <h1 className="text-2xl font-semibold text-white">Register organization</h1>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950/60 px-6 py-10">
+      <div aria-hidden className="pointer-events-none absolute left-[-12%] top-[-18%] h-[30rem] w-[30rem] animate-pulse rounded-full bg-emerald-500/10 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute bottom-[-22%] right-[-12%] h-[32rem] w-[32rem] rounded-full bg-teal-500/10 blur-3xl" />
+      <div className="relative w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-2xl shadow-black/40">
+        <div className="mb-7 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 shadow-lg shadow-emerald-500/20">
+            <Boxes className="h-5 w-5 text-slate-950" strokeWidth={2.4} />
+          </div>
+          <div>
+            <p className="text-lg font-semibold tracking-tight text-white">
+              Vendor<span className="text-emerald-400">Sphere</span>
+            </p>
+            <p className="text-xs text-slate-500">Create your procurement workspace</p>
+          </div>
+        </div>
+        <h1 className="text-xl font-semibold text-white">Register organization</h1>
         <p className="mt-2 text-sm text-slate-400">
-          Creates your organization and an admin account.
+          Sets up your organization and its admin account in one step.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">

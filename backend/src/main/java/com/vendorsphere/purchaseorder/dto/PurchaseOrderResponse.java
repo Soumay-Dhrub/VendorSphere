@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public record PurchaseOrderResponse(
         UUID id,
-        String poNumber,
+        String purchaseOrderNumber,
         UUID rfqId,
         UUID quotationId,
         UUID vendorId,

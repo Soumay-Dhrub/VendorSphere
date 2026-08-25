@@ -3,12 +3,13 @@
 import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { isCurrentNavItem, navItemsForRoles } from "@/components/app-nav";
 import { NotificationBell } from "@/components/notification-bell";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/api";
+import { playClick, playNotificationPop, setSoundsEnabled, soundsEnabled } from "@/lib/sound";
 import { useStoredUser } from "@/lib/hooks/auth";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -16,6 +17,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [soundOn, setSoundOn] = useState(true);
+  const [light, setLight] = useState(false);
+
+  // Restore persisted preferences and play a pop when unread notifications arrive.
+  useEffect(() => {
+    try {
+      setSoundOn(localStorage.getItem("vs-sounds") !== "off");
+      const light = localStorage.getItem("vs-theme") === "light";
+      setLight(light);
+      document.documentElement.classList.toggle("light", light);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (user === null) {
@@ -39,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navItems = navItemsForRoles(user.roles);
 
   async function handleSignOut() {
+    playClick();
     await logout();
     // Server state belongs to the user who just left.
     queryClient.clear();
@@ -106,6 +120,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-2">
               <NotificationBell />
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Toggle sound effects"
+                title="Toggle sound effects"
+                onClick={() => {
+                  const next = !soundsEnabled();
+                  setSoundsEnabled(next);
+                  if (next) playClick();
+                  setSoundOn(next);
+                }}
+              >
+                {soundOn ? "🔊" : "🔇"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Toggle light mode"
+                title="Toggle light mode"
+                onClick={() => {
+                  playClick();
+                  const root = document.documentElement;
+                  const light = root.classList.toggle("light");
+                  try {
+                    localStorage.setItem("vs-theme", light ? "light" : "dark");
+                  } catch {}
+                  setLight(light);
+                }}
+              >
+                {light ? "☀️" : "🌙"}
+              </Button>
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 <LogOut aria-hidden="true" />
                 Sign out

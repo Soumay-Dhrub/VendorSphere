@@ -72,3 +72,15 @@ body {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+
+/* Light mode: invert the dark-first design while keeping media and brand
+   icons readable. Toggled via the ☀️/🌙 button in the app shell. */
+html.light body {
+  filter: invert(0.93) hue-rotate(180deg);
+  background: #e2e8f0;
+}
+html.light img,
+html.light video,
+html.light [aria-hidden="true"] {
+  filter: invert(1) hue-rotate(180deg);
+}

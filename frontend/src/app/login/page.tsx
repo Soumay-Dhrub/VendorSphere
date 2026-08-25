@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Boxes, Globe2, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import { login } from "@/lib/api";
+import { playSuccess } from "@/lib/sound";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -54,6 +55,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(data.email, data.password);
+      playSuccess();
       router.push("/dashboard");
     } catch {
       setError("Invalid email or password");

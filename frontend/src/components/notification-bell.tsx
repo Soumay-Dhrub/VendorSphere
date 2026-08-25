@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import Link from "next/link";
+import { playNotificationPop } from "@/lib/sound";
 import { useUnreadNotificationCount } from "@/lib/hooks/notifications";
 
 export function notificationBellLabel(unreadCount: number): string {
@@ -17,6 +19,15 @@ export function notificationBellLabel(unreadCount: number): string {
 export function NotificationBell() {
   const { data } = useUnreadNotificationCount();
   const unreadCount = Math.max(0, data?.unreadCount ?? 0);
+  const previousUnread = useRef<number | undefined>(undefined);
+
+  // Pop sound when new notifications arrive while the app is open.
+  useEffect(() => {
+    if (previousUnread.current !== undefined && unreadCount > previousUnread.current) {
+      playNotificationPop();
+    }
+    previousUnread.current = unreadCount;
+  }, [unreadCount]);
 
   return (
     <Link

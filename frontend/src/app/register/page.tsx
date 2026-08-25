@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { register as registerUser } from "@/lib/api";
+import { playSuccess } from "@/lib/sound";
 import { Boxes } from "lucide-react";
 
 const registerSchema = z.object({
@@ -35,6 +36,7 @@ export default function RegisterPage() {
     setError(null);
     try {
       await registerUser(data);
+      playSuccess();
       router.push("/dashboard");
     } catch {
       setError("Registration failed. Email may already be in use.");

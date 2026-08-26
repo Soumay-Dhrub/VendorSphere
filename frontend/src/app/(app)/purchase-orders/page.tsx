@@ -2,7 +2,6 @@
 
 import { usePurchaseOrders } from "@/lib/hooks/purchaseOrders";
 import { formatMoney } from "@/lib/format";
-import type { PurchaseOrderStatus } from "@/lib/api/types";
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: "bg-slate-500/10 text-slate-300",

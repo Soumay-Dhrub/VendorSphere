@@ -9,7 +9,7 @@ import { isCurrentNavItem, navItemsForRoles } from "@/components/app-nav";
 import { NotificationBell } from "@/components/notification-bell";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/api";
-import { playClick, playNotificationPop, setSoundsEnabled, soundsEnabled } from "@/lib/sound";
+import { playClick, setSoundsEnabled, soundsEnabled } from "@/lib/sound";
 import { useStoredUser } from "@/lib/hooks/auth";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -20,14 +20,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [soundOn, setSoundOn] = useState(true);
   const [light, setLight] = useState(false);
 
-  // Restore persisted preferences and play a pop when unread notifications arrive.
   useEffect(() => {
-    try {
-      setSoundOn(localStorage.getItem("vs-sounds") !== "off");
-      const light = localStorage.getItem("vs-theme") === "light";
-      setLight(light);
-      document.documentElement.classList.toggle("light", light);
-    } catch {}
+    const restore = setTimeout(() => {
+      try {
+        setSoundOn(localStorage.getItem("vs-sounds") !== "off");
+        const isLight = localStorage.getItem("vs-theme") === "light";
+        setLight(isLight);
+        document.documentElement.classList.toggle("light", isLight);
+        document.body.classList.toggle("light", isLight);
+      } catch {}
+    }, 0);
+    return () => clearTimeout(restore);
   }, []);
 
   useEffect(() => {
@@ -44,7 +47,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Signed out: the effect above is navigating to /login, so no chrome is rendered.
   if (user === null) {
     return null;
   }
@@ -54,7 +56,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   async function handleSignOut() {
     playClick();
     await logout();
-    // Server state belongs to the user who just left.
     queryClient.clear();
     router.replace("/login");
   }

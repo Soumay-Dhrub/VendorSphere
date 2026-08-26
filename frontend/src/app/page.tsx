@@ -1,48 +1,34 @@
 "use client";
 
-/**
- * VendorSphere landing page with purposeful product animations:
- * live hero dashboard simulation, sequential lifecycle reveal, interactive
- * quotation comparison, three-way-match demo with mismatch toggle, role
- * workspace switcher, count-up scorecards and IntersectionObserver reveals.
- * All motion respects prefers-reduced-motion and runs once.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, BarChart3, Boxes, Building2, CheckCircle2, ClipboardList,
   FileText, Gauge, GitCompareArrows, Landmark, LineChart, PackageCheck,
-  ReceiptText, Scale3d, ShieldCheck, Truck, UserCog, Users, XCircle,
+  ReceiptText, ShieldCheck, Truck, UserCog, Users, XCircle,
 } from "lucide-react";
 
-/* ---------- shared motion primitives ---------- */
-
-/**
- * Client-side reduced-motion flag. Read inside an effect so the first
- * (server) render always matches the client, avoiding hydration mismatches.
- */
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setReduced(media.matches);
-    update();
+    const initial = setTimeout(update, 0);
     media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
+    return () => {
+      clearTimeout(initial);
+      media.removeEventListener("change", update);
+    };
   }, []);
   return reduced;
 }
 
-/** Fires once when the element enters the viewport. */
 function useInView<T extends HTMLElement>(threshold = 0.25) {
-  const reduced = usePrefersReducedMotion();
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    if (reduced) { setInView(true); return; }
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -58,7 +44,6 @@ function useInView<T extends HTMLElement>(threshold = 0.25) {
   return [ref, inView] as const;
 }
 
-/** Fade/slide reveal wrapper (Requirement 10). */
 function Reveal({
   children,
   delay = 0,
@@ -85,7 +70,6 @@ function Reveal({
   );
 }
 
-/** Counts a number up once, triggered by `active`. */
 function useCountUp(target: number, active: boolean, duration = 1200) {
   const reduced = usePrefersReducedMotion();
   const [value, setValue] = useState(reduced ? target : 0);
@@ -100,11 +84,9 @@ function useCountUp(target: number, active: boolean, duration = 1200) {
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [target, active, duration]);
+  }, [target, active, duration, reduced]);
   return value;
 }
-
-/* ---------- data ---------- */
 
 const NAV = [
   ["Product", "#product"], ["Solutions", "#solutions"],
@@ -153,8 +135,6 @@ const ROLES = [
   { key: "admin", label: "Admin", icon: UserCog, body: "Manage users, roles, departments, vendors and the audit trail.", preview: ["User roles updated", "Vendor document expiring in 30 days", "Audit trail: award justification recorded"] },
 ];
 
-/* ---------- animated hero dashboard simulation (Priority 4) ---------- */
-
 type Activity = { id: number; text: string };
 
 function HeroDashboard() {
@@ -182,7 +162,7 @@ function HeroDashboard() {
       setActivities((current) => [{ id: Date.now(), text }, ...current].slice(0, 2));
     }
     return () => timers.forEach(clearTimeout);
-  }, [inView]);
+  }, [inView, reduced]);
 
   return (
     <div
@@ -221,7 +201,6 @@ function HeroDashboard() {
         </div>
       </div>
 
-      {/* activity feed */}
       <ul className="mt-2.5 space-y-1.5 rounded-lg border border-slate-800 bg-slate-950/70 p-2.5">
         {activities.map((activity) => (
           <li
@@ -256,13 +235,11 @@ function Kpi({ label, value, highlight }: { label: string; value: string; highli
   );
 }
 
-/* ---------- lifecycle (Priority 2): sequential stage reveal ---------- */
-
 function Pipeline() {
   const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLOListElement>(0.3);
   return (
-    <ol className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8" aria-label="Procurement lifecycle">
+    <ol ref={ref} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8" aria-label="Procurement lifecycle">
       {STAGES.map(([label, Icon], i) => {
         const shown = inView || reduced;
         return (
@@ -293,8 +270,6 @@ function Pipeline() {
     </ol>
   );
 }
-
-/* ---------- comparison showcase (Priority 3) ---------- */
 
 function ComparisonShowcase() {
   const reduced = usePrefersReducedMotion();
@@ -359,8 +334,6 @@ function ComparisonShowcase() {
   );
 }
 
-/* ---------- three-way matching demo (Priority 1) ---------- */
-
 const MATCH_CHECKS = ["Quantity match", "Unit price match", "Delivery confirmed", "Duplicate check"];
 
 function MatchDemo() {
@@ -370,17 +343,15 @@ function MatchDemo() {
   const [matched, setMatched] = useState(false);
   const [mismatch, setMismatch] = useState(false);
 
-  // Sequential checks once in view (or immediately after toggle reset).
+  const complete = inView && (reduced || checkIndex >= MATCH_CHECKS.length);
+
   useEffect(() => {
-    if (!inView || reduced) {
-      if (reduced) { setCheckIndex(MATCH_CHECKS.length); setMatched(true); }
-      return;
-    }
+    if (!inView || reduced) return;
     const timers = MATCH_CHECKS.map((_, i) =>
       setTimeout(() => setCheckIndex(i + 1), 900 + i * 550));
     timers.push(setTimeout(() => setMatched(true), 900 + MATCH_CHECKS.length * 550));
     return () => timers.forEach(clearTimeout);
-  }, [inView]);
+  }, [inView, reduced]);
 
   const replay = useCallback(() => {
     setMismatch(false);
@@ -390,7 +361,7 @@ function MatchDemo() {
     MATCH_CHECKS.forEach((_, i) =>
       setTimeout(() => setCheckIndex(i + 1), 700 + i * 500));
     setTimeout(() => setMatched(true), 700 + MATCH_CHECKS.length * 500);
-  }, []);
+  }, [reduced]);
 
   const sources = [
     { label: "Purchase Order", detail: "100 units × ₹1,000" },
@@ -432,12 +403,12 @@ function MatchDemo() {
       <div className="space-y-3">
         <ol className="space-y-2">
           {MATCH_CHECKS.map((check, i) => {
-            const done = checkIndex > i;
+            const done = complete || checkIndex > i;
             return (
               <li
                 key={check}
                 className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm transition-all duration-500"
-                style={{ opacity: done ? 1 : 0.35, borderColor: done ? "rgb(16 185 129 / .35)" : undefined }}
+                style={{ opacity: (done || (inView && reduced)) ? 1 : 0.35, borderColor: (done || (inView && reduced)) ? "rgb(16 185 129 / .35)" : undefined }}
                 aria-live="polite"
               >
                 {done ? (
@@ -457,7 +428,7 @@ function MatchDemo() {
               ? "border-amber-700/60 bg-amber-950/30"
               : "border-emerald-500/30 bg-emerald-500/10"
           }`}
-          style={{ opacity: matched ? 1 : 0.4 }}
+          style={{ opacity: (matched || (inView && reduced)) ? 1 : 0.4 }}
           aria-live="polite"
         >
           {mismatch ? (
@@ -489,12 +460,9 @@ function MatchDemo() {
   );
 }
 
-/* ---------- vendor scorecard (Priority 6) ---------- */
-
 const SCORE_METRICS = [["Delivery", 92], ["Quality", 88], ["Pricing", 80], ["Responsiveness", 91], ["Fulfilment", 85]] as const;
 
 function Scorecard() {
-  const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLDivElement>(0.4);
   const overall = useCountUp(87, inView, 1300);
   return (
@@ -515,25 +483,9 @@ function Scorecard() {
         </div>
       </div>
       <div className="mt-6 space-y-3.5">
-        {SCORE_METRICS.map(([metric, score]) => {
-          const value = useCountUp(score, inView, 1100);
-          return (
-            <div key={metric}>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>{metric}</span><span className="tabular-nums">{value}</span>
-              </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"
-                  style={{
-                    width: `${inView ? value : 0}%`,
-                    transition: reduced ? "none" : "width 1.1s cubic-bezier(.22,.61,.36,1)",
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
+        {SCORE_METRICS.map(([metric, score]) => (
+          <ScoreRow key={metric} metric={metric} target={score} active={inView} />
+        ))}
       </div>
     </div>
   );
@@ -940,6 +892,35 @@ export default function Home() {
           © {new Date().getFullYear()} VendorSphere · Source · Compare · Award · Receive · Match · Pay
         </div>
       </footer>
+    </div>
+  );
+}
+
+function ScoreRow({
+  metric,
+  target,
+  active,
+}: {
+  metric: string;
+  target: number;
+  active: boolean;
+}) {
+  const reduced = usePrefersReducedMotion();
+  const value = useCountUp(target, active, 1100);
+  return (
+    <div>
+      <div className="flex justify-between text-xs text-slate-400">
+        <span>{metric}</span><span className="tabular-nums">{value}</span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-800">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"
+          style={{
+            width: `${active ? value : 0}%`,
+            transition: reduced ? "none" : "width 1.1s cubic-bezier(.22,.61,.36,1)",
+          }}
+        />
+      </div>
     </div>
   );
 }

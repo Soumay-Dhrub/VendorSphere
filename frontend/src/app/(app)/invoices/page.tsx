@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useInvoices } from "@/lib/hooks/invoices";
 import { formatMoney } from "@/lib/format";
-import type { InvoiceStatus, MatchStatus } from "@/lib/api/types";
+import type { InvoiceStatus } from "@/lib/api/types";
 
 const STATUSES: (InvoiceStatus | "ALL")[] = [
   "ALL", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED",
